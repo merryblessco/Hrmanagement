@@ -1,0 +1,54 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Rider files
+.idea/
+
+# User-specific files
+*.userprefs
+
+# Visual Studio Code files
+.vscode/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Publish results
+publish/
+*.Publish.xml
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Configuration files
+appsettings.Development.json
+appsettings.Production.json
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+
+# Misc
+*.db
+*.pdb
+*.mdb
+*.pidb
+*.scc
+
+# Others
+*.zip
+*.rar
+*.tar.gz
