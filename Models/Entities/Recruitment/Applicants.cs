@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace HRbackend.Models.Entities
+namespace HRbackend.Models.Entities.Recruitment
 {
     public class Applicants
     {
@@ -10,11 +10,15 @@ namespace HRbackend.Models.Entities
         public int ApplicantID { get; set; }
         [ForeignKey("JobID")]
         public int JobID { get; set; }
-        public string  FirstName  { get; set; }
+        public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string Fullname { get; set; }
+        public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public string ResumeFilePath { get; set; }
         public DateTime ApplicationDate { get; set; }
+        public DateTime DOB { get; set; }
         public string Status { get; set; }// (e.g., applied, shortlisted, rejected, hired)
+        public string Coverletter { get; set; }
     }
 }

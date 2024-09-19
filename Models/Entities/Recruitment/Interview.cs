@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace HRbackend.Models.Entities
+namespace HRbackend.Models.Entities.Recruitment
 {
     public class Interview
     {
@@ -14,6 +14,6 @@ namespace HRbackend.Models.Entities
         public string Feedback { get; set; }
         public string Interviewer { get; set; }
         public string Status { get; set; } //(e.g., scheduled, completed)
-   
+
     }
 }

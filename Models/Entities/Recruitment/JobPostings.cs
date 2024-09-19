@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace HRbackend.Models.Entities
+namespace HRbackend.Models.Entities.JobPosting
 {
     public class JobPostings
     {
@@ -9,9 +9,17 @@ namespace HRbackend.Models.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int JobID { get; set; }
         public string JobTitle { get; set; }
+        public string JobCode { get; set; }
         public string Department { get; set; }
         public string Description { get; set; }
         public DateTime PostingDate { get; set; }
         public string Status { get; set; } // (e.g., open, closed)
-}
+        public string JobMode { get; set; }
+        public string WorkMode { get; set; }
+        public string CompanyAddress { get; set; }
+        public string SalaryRange { get; set; }
+        public List<string> Benefits { get; set; }
+        public List<string> Responsibilities { get; set; }
+        public List<string> Qualifications { get; set; }
+    }
 }

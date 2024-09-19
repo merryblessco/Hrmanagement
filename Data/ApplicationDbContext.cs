@@ -1,4 +1,6 @@
 ﻿using HRbackend.Models.Entities;
+using HRbackend.Models.Entities.JobPosting;
+using HRbackend.Models.Entities.Recruitment;
 using LinkOrgNet.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
