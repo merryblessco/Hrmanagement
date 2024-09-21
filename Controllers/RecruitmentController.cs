@@ -70,7 +70,7 @@ namespace HRbackend.Controllers
         }
 
         //[HttpGet("{id}")]
-        [HttpGet("getJobby{id}")]
+        [HttpGet("getJob/{id}")]
         public async Task<ActionResult<JobPostingDto>> GetById(int id)
         {
             var jobPosting = await _dbContext.JobPostings.FindAsync(id);
@@ -78,7 +78,7 @@ namespace HRbackend.Controllers
             return Ok(_mapper.Map<JobPostingDto>(jobPosting));
         }
         [HttpPost("PostJob")]
-        public async Task<ActionResult<JobPostingDto>> Create([FromForm] JobPostingDto jobPostingDto)
+        public async Task<ActionResult<JobPostingDto>> Create([FromBody] JobPostingDto jobPostingDto)
         {
             var jobPosting = _mapper.Map<JobPostings>(jobPostingDto);
             var postingDate = DateTime.Now;
