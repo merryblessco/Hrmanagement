@@ -29,7 +29,7 @@ namespace HRbackend.Controllers
         {
             return await _dbContext.Employees.ToListAsync();
         }
-        [HttpGet("info")]
+        [HttpGet("Token")]
         public async Task<IActionResult> GetEmployeeInfo()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;

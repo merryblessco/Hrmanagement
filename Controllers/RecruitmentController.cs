@@ -86,7 +86,7 @@ namespace HRbackend.Controllers
 
             var posting = new JobPostings
             {
-                JobID = jobPostingDto.JobID,
+                
                 JobTitle = jobPostingDto.JobTitle,
                 JobCode = jobPostingDto.JobCode,
                 CompanyAddress = jobPostingDto.CompanyAddress,
