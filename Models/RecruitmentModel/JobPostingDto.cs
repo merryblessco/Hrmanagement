@@ -14,7 +14,8 @@ namespace HRbackend.Models.RecruitmentModel
         public string JobMode { get; set; }
         public string WorkMode { get; set; }
         public string CompanyAddress { get; set; }
-        public string SalaryRange { get; set; }
+        public decimal MinSalaryRange { get; set; }
+        public decimal MaxSalaryRange { get; set; }
         public List<string> Benefits { get; set; }
         public List<string> Responsibilities { get; set; }
         public List<string> Qualifications { get; set; }

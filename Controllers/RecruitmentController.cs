@@ -83,6 +83,12 @@ namespace HRbackend.Controllers
             var jobPosting = _mapper.Map<JobPostings>(jobPostingDto);
             var postingDate = DateTime.Now;
             jobPostingDto.PostingDate = postingDate;
+            Random randR = new Random();
+            int R = randR.Next(0000, 2222);
+            int R1 = randR.Next(0000, 4444);
+
+            int add = R + R1;
+            jobPostingDto.JobCode = "JB" + add.ToString();
 
             var posting = new JobPostings
             {
@@ -96,7 +102,8 @@ namespace HRbackend.Controllers
                 Status = jobPostingDto.Status,
                 JobMode = jobPostingDto.JobMode,
                 WorkMode = jobPostingDto.WorkMode,
-                SalaryRange = jobPostingDto.SalaryRange,
+                MaxSalaryRange = jobPostingDto.MaxSalaryRange,
+                MinSalaryRange = jobPostingDto.MinSalaryRange,
                 Benefits = jobPostingDto.Benefits,
                 Responsibilities = jobPostingDto.Responsibilities,
                 Qualifications = jobPostingDto.Qualifications
@@ -124,7 +131,8 @@ namespace HRbackend.Controllers
             posting.Status = jobPostingDto.Status;
             posting.JobMode = jobPostingDto.JobMode;
             posting.WorkMode = jobPostingDto.WorkMode;
-            posting.SalaryRange = jobPostingDto.SalaryRange;
+            posting.MaxSalaryRange = jobPostingDto.MaxSalaryRange;
+            posting.MinSalaryRange = jobPostingDto.MinSalaryRange;
             posting.Benefits = jobPostingDto.Benefits;
             posting.Responsibilities = jobPostingDto.Responsibilities;
             posting.Qualifications = jobPostingDto.Qualifications;
