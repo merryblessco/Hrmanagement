@@ -5,12 +5,18 @@ namespace HRbackend.Models.Enums
 {
     public enum ApplicationStatus
     {
-        [Description("Pending")]
-        Pending = 1,
-        [Description("Completed")]
-        Completed = 2,
+        [Description("Applied")]
+        Applied = 1,
+        [Description("Screening")]
+        Screening = 2,
+        [Description("Interview")]
+        Interview = 3,
+        [Description("Offered")]
+        Offered = 4,
+        [Description("Hired")]
+        Hired = 5,
         [Description("Rejected")]
-        Rejected = 3
+        Rejected = 6
     }
 
     public static class EnumExtensions
