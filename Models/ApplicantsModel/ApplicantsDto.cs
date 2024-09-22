@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using HRbackend.Models.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRbackend.Models.ApplicantsModel
 {
@@ -13,7 +14,8 @@ namespace HRbackend.Models.ApplicantsModel
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public DateTime DOB { get; set; }
-        public string Status { get; set; }
+        public string? StatusText { get; set; }
+        public ApplicationStatus? Status { get; set; }
         public string Coverletter { get; set; }
         public IFormFile Resume { get; set; }
     }

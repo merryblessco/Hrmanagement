@@ -77,6 +77,8 @@ namespace HRbackend.Controllers
             if (jobPosting == null) return NotFound("No Posting you Job search, pls try other Jobs");
             return Ok(_mapper.Map<JobPostingDto>(jobPosting));
         }
+
+        
         [HttpPost("PostJob")]
         public async Task<ActionResult<JobPostingDto>> Create([FromBody] JobPostingDto jobPostingDto)
         {

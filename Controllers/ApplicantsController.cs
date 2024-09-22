@@ -2,6 +2,8 @@
 using HRbackend.Data;
 using HRbackend.Models.ApplicantsModel;
 using HRbackend.Models.Entities.Recruitment;
+using HRbackend.Models.Enums;
+using HRbackend.Models.RecruitmentModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,18 +24,29 @@ namespace HRbackend.Controllers
             _mapper = mapper;
         }
         // GET: api/Applicants
-        [HttpGet]
-        public async Task<IActionResult> GetApplicants()
+        //[HttpGet]
+        //public async Task<IActionResult> GetApplicants()
+        //{
+        //    var applicants = await _dbContext.Applicants.ToListAsync();
+        //    return Ok(applicants);
+        //}
+        [HttpGet("getallApplicats")]
+        public async Task<ActionResult<IEnumerable<ApplicantsDto>>> GetAll()
         {
-            var applicants = await _dbContext.Applicants.ToListAsync();
-            return Ok(applicants);
+            var applications = await _dbContext.Applicants.ToListAsync();
+            var applications2 = _mapper.Map<IEnumerable<ApplicantsDto>>(applications);
+            foreach (var application  in applications2)
+            {
+                application.StatusText = application.Status.GetDescription();
+            }
+            return Ok(applications2);
         }
-
         // GET: api/Applicants/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetApplicant(int id)
+        [HttpGet("{ApplicantID}")]
+        
+        public async Task<IActionResult> GetApplicant(int ApplicantID)
         {
-            var applicant = await _dbContext.Applicants.FindAsync(id);
+            var applicant = await _dbContext.Applicants.FindAsync(ApplicantID);
 
             if (applicant == null)
             {
@@ -42,6 +55,21 @@ namespace HRbackend.Controllers
 
             return Ok(applicant);
         }
+        [HttpGet("GetllApplicatsBy/{JobId}")]
+        public async Task<IActionResult> GetApplicants(int JobId)
+        {
+            var applicants = await _dbContext.Applicants
+                                             .Where(a => a.JobID == JobId)
+                                             .ToListAsync();
+
+            if (applicants == null || !applicants.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(applicants);
+        }
+
         // POST: api/Applicants
         [HttpPost]
         public async Task<IActionResult> CreateApplicant([FromForm] ApplicantsDto request)
@@ -58,14 +86,14 @@ namespace HRbackend.Controllers
                 ResumeFilePath = fileName,
                 ApplicationDate = DateTime.Now,
                 DOB = request.DOB,
-                Status = request.Status,
+                Status = ApplicationStatus.Pending,
                 Coverletter = request.Coverletter
             };
 
             _dbContext.Applicants.Add(applicant);
             await _dbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetApplicant), new { id = applicant.ApplicantID }, applicant);
+            return CreatedAtAction(nameof(CreateApplicant), new { id = applicant.ApplicantID }, applicant);
         }
 
         // PUT: api/Applicants/{id}
@@ -82,7 +110,7 @@ namespace HRbackend.Controllers
             applicant.LastName = request.LastName;
             applicant.PhoneNumber = request.PhoneNumber;
             applicant.Email = request.Email;
-            applicant.Status = request.Status;
+            applicant.Status = (ApplicationStatus)request.Status;
             applicant.Coverletter = request.Coverletter;
 
             if (request.Resume != null)

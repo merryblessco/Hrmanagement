@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using HRbackend.Models.Enums;
 
 namespace HRbackend.Models.Entities.Recruitment
 {
@@ -18,7 +19,7 @@ namespace HRbackend.Models.Entities.Recruitment
         public string ResumeFilePath { get; set; }
         public DateTime ApplicationDate { get; set; }
         public DateTime DOB { get; set; }
-        public string Status { get; set; }// (e.g., applied, shortlisted, rejected, hired)
+        public ApplicationStatus Status { get; set; }// (e.g., applied, shortlisted, rejected, hired)
         public string Coverletter { get; set; }
     }
 }
