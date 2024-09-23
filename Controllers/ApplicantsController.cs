@@ -55,7 +55,7 @@ namespace HRbackend.Controllers
 
             return Ok(applicant);
         }
-        [HttpGet("GetllApplicatsBy/{JobId}")]
+        [HttpGet("GetllApplicantsBy/{JobId}")]
         public async Task<IActionResult> GetApplicants(int JobId)
         {
             var applicants = await _dbContext.Applicants
@@ -86,7 +86,7 @@ namespace HRbackend.Controllers
                 ResumeFilePath = fileName,
                 ApplicationDate = DateTime.Now,
                 DOB = request.DOB,
-                Status = ApplicationStatus.Pending,
+                Status = ApplicationStatus.Applied,
                 Coverletter = request.Coverletter
             };
 
