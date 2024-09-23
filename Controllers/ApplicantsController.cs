@@ -30,7 +30,7 @@ namespace HRbackend.Controllers
         //    var applicants = await _dbContext.Applicants.ToListAsync();
         //    return Ok(applicants);
         //}
-        [HttpGet("getallApplicats")]
+        [HttpGet("getallApplicants")]
         public async Task<ActionResult<IEnumerable<ApplicantsDto>>> GetAll()
         {
             var applications = await _dbContext.Applicants.ToListAsync();
@@ -67,7 +67,12 @@ namespace HRbackend.Controllers
                 return NotFound();
             }
 
-            return Ok(applicants);
+            var applications2 = _mapper.Map<IEnumerable<ApplicantsDto>>(applicants);
+            foreach (var application in applications2)
+            {
+                application.StatusText = application.Status.GetDescription();
+            }
+            return Ok(applications2);
         }
 
         // POST: api/Applicants
