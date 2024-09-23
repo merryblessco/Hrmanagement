@@ -17,6 +17,8 @@ namespace HRbackend.Models.ApplicantsModel
         public string? StatusText { get; set; }
         public ApplicationStatus? Status { get; set; }
         public string Coverletter { get; set; }
+        public DateTime ApplicationDate { get; set; }
+
         public IFormFile Resume { get; set; }
     }
 }
