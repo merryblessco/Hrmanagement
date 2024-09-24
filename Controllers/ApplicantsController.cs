@@ -155,6 +155,7 @@ namespace HRbackend.Controllers
             applicant.Email = request.Email;
             applicant.Status = (ApplicationStatus)request.Status;
             applicant.Coverletter = request.Coverletter;
+            applicant.ResumeFile = request.ResumeFile;
 
             if (request.Resume != null)
             {
