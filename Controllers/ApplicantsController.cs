@@ -7,6 +7,8 @@ using HRbackend.Models.RecruitmentModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace HRbackend.Controllers
 {
@@ -80,9 +82,8 @@ namespace HRbackend.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateApplicant([FromForm] ApplicantsDto request)
         {
-            Random randR = new Random();
-            int R = randR.Next(0000, 2222);
-            request.JobID = R;
+
+           
             // Check if the file is valid
             if (request.Resume == null || request.Resume.Length == 0)
             {
@@ -105,6 +106,15 @@ namespace HRbackend.Controllers
                 await request.Resume.CopyToAsync(memoryStream);
                 fileBytes = memoryStream.ToArray();
             }
+
+            var formData = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(fileBytes);
+            fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
+
+            formData.Add(fileContent, "ResumeFile", "resume.pdf");
+
+            // Send the request
+           // await httpClient.PostAsync("api/your-endpoint", formData);
 
             var fileName = await SaveResumeFile(request.Resume);
             var applicant = new Applicants
