@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HRbackend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class Initialmigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,10 +20,15 @@ namespace HRbackend.Migrations
                     JobID = table.Column<int>(type: "int", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Fullname = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResumeFilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ApplicationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    DOB = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Coverletter = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ResumeFile = table.Column<byte[]>(type: "varbinary(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -114,7 +119,8 @@ namespace HRbackend.Migrations
                     LoginId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     HireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DOB = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ManagerID = table.Column<int>(type: "int", nullable: false)
+                    ManagerID = table.Column<int>(type: "int", nullable: false),
+                    IsAdmin = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -162,10 +168,19 @@ namespace HRbackend.Migrations
                     JobID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     JobTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    JobCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Department = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PostingDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    JobMode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WorkMode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CompanyAddress = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MinSalaryRange = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MaxSalaryRange = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Benefits = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Responsibilities = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Qualifications = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -187,6 +202,21 @@ namespace HRbackend.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LeaveRequests", x => x.LeaveRequestID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LGAs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StateCode = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LGAs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -274,6 +304,21 @@ namespace HRbackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "States",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StateCode = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_States", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TimeTracking",
                 columns: table => new
                 {
@@ -325,6 +370,9 @@ namespace HRbackend.Migrations
                 name: "LeaveRequests");
 
             migrationBuilder.DropTable(
+                name: "LGAs");
+
+            migrationBuilder.DropTable(
                 name: "Onboardings");
 
             migrationBuilder.DropTable(
@@ -338,6 +386,9 @@ namespace HRbackend.Migrations
 
             migrationBuilder.DropTable(
                 name: "SelfServiceAction");
+
+            migrationBuilder.DropTable(
+                name: "States");
 
             migrationBuilder.DropTable(
                 name: "TimeTracking");

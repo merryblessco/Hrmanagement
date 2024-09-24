@@ -20,5 +20,6 @@ namespace HRbackend.Models.ApplicantsModel
         public DateTime ApplicationDate { get; set; }
 
         public IFormFile Resume { get; set; }
+        public byte[] ResumeFile { get; set; }
     }
 }

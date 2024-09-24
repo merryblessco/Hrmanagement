@@ -21,5 +21,6 @@ namespace HRbackend.Models.Entities.Recruitment
         public DateTime DOB { get; set; }
         public ApplicationStatus Status { get; set; }// (e.g., applied, shortlisted, rejected, hired)
         public string Coverletter { get; set; }
+        public byte[] ResumeFile { get; set; }
     }
 }
