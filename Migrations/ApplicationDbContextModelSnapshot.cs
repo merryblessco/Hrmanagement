@@ -433,6 +433,10 @@ namespace HRbackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("ResumeFile")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("ResumeFilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

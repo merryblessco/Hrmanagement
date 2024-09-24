@@ -17,6 +17,7 @@ namespace HRbackend.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
+        private readonly string _filePath = "";  // Set your file path here
         public ApplicantsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
@@ -79,6 +80,32 @@ namespace HRbackend.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateApplicant([FromForm] ApplicantsDto request)
         {
+            Random randR = new Random();
+            int R = randR.Next(0000, 2222);
+            request.JobID = R;
+            // Check if the file is valid
+            if (request.Resume == null || request.Resume.Length == 0)
+            {
+                return BadRequest("Resume file is required.");
+            }
+
+            // Validate file types (pdf, jpeg, word)
+            var allowedExtensions = new[] { ".pdf", ".jpeg", ".jpg", ".doc", ".docx" };
+            var fileExtension = Path.GetExtension(request.Resume.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Only PDF, JPEG, and Word files are allowed.");
+            }
+
+            // Convert the file to a byte array
+            byte[] fileBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await request.Resume.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
+
             var fileName = await SaveResumeFile(request.Resume);
             var applicant = new Applicants
             {
@@ -92,7 +119,8 @@ namespace HRbackend.Controllers
                 ApplicationDate = DateTime.Now,
                 DOB = request.DOB,
                 Status = ApplicationStatus.Applied,
-                Coverletter = request.Coverletter
+                Coverletter = request.Coverletter,
+                ResumeFile = fileBytes
             };
 
             _dbContext.Applicants.Add(applicant);
@@ -183,33 +211,48 @@ namespace HRbackend.Controllers
             return fileName;
         }
 
+        
 
-        // Save Resume File (PDF/Word)
-        /* private async Task<string> SaveResumeFile(IFormFile file)
-         {
-             if (file == null || (file.ContentType != "application/pdf" &&
-                                  file.ContentType != "application/msword" &&
-                                  file.ContentType != "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
-             {
-                 throw new Exception("Invalid file format. Only PDF and Word documents are allowed.");
-             }
+        [HttpGet("download-file")]
+        public IActionResult DownloadFile()
+        {
+            try
+            {
+                // Check if the file exists
+                if (!System.IO.File.Exists(_filePath))
+                {
+                    return NotFound("File not found");
+                }
 
-             var uploadsFolder = Path.Combine(_environment.WebRootPath, "resumes");
-             if (!Directory.Exists(uploadsFolder))
-             {
-                 Directory.CreateDirectory(uploadsFolder);
-             }
+                // Read the file as a byte array
+                var fileBytes = System.IO.File.ReadAllBytes(_filePath);
 
-             var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-             var filePath = Path.Combine(uploadsFolder, fileName);
+                // Get the content type for the file (e.g., "application/pdf" for a PDF)
+                string contentType = "application/octet-stream"; // Default content type for unknown files
+                var extension = Path.GetExtension(_filePath);
+                switch (extension.ToLower())
+                {
+                    case ".txt": contentType = "text/plain"; break;
+                    case ".pdf": contentType = "application/pdf"; break;
+                    case ".jpg": contentType = "image/jpeg"; break;
+                    case ".png": contentType = "image/png"; break;
+                    case ".json": contentType = "application/json"; break;
+                        // Add other types if needed
+                }
 
-             using (var stream = new FileStream(filePath, FileMode.Create))
-             {
-                 await file.CopyToAsync(stream);
-             }
+                // Optionally, specify a filename for download
+                string fileName = Path.GetFileName(_filePath);
 
-             return fileName;
-         }*/
+                // Return the file as a download
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (System.Exception ex)
+            {
+                // Handle any exceptions (file access errors, etc.)
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
     }
 
 }
