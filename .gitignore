@@ -5,6 +5,9 @@
 appsettings.json
 appsettings.Development.json
 
+# Ignore Visual Studio .vs folder
+.vs/
+
 # Other common .NET files to ignore
 bin/
 obj/
