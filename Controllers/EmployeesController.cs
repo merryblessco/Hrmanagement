@@ -1,6 +1,6 @@
 ﻿using HRbackend.Data;
 using HRbackend.Models.EmployeeModels;
-using HRbackend.Models.Entities;
+using HRbackend.Models.Entities.Employees;
 using LinkOrgNet.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

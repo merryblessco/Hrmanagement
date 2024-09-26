@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 
-namespace HRbackend.Models.Entities
+namespace HRbackend.Models.Entities.Employees
 {
     public class Employee
     {
@@ -25,7 +25,7 @@ namespace HRbackend.Models.Entities
         public DateTime HireDate { get; set; }
         public DateTime DOB { get; set; }
         [ForeignKey("ManagerID")]
-        public int  ManagerID { get; set; }
+        public int ManagerID { get; set; }
         public bool IsAdmin { get; set; }
     }
 }

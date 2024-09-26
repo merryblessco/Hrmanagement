@@ -18,7 +18,34 @@ namespace HRbackend.Models.Enums
         [Description("Rejected")]
         Rejected = 6
     }
-
+    public enum OfferLetterStatus
+    {
+        [Description("Sent")]
+        Sent = 1,
+        [Description("Accepted")]
+        Accepted
+    }
+    public enum WelcomeEmailStatus
+    {
+        [Description("Sent")]
+        Sent = 1,
+        [Description("Pending")]
+        Pending
+    }
+    public enum PaperworkStatus
+    {
+        [Description("Completed")]
+        Completed = 1,
+        [Description("Pending")]
+        Pending
+    }
+    public enum EquipmentStatus
+    {
+        [Description("Prepared")]
+        Prepared = 1,
+        [Description("In-progress")]
+        Inprogress
+    }
     public static class EnumExtensions
     {
         public static string GetDescription(this Enum value)

@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace HRbackend.Models.Entities
+namespace HRbackend.Models.Entities.Employees
 {
     public class EmployeeBenefit
     {

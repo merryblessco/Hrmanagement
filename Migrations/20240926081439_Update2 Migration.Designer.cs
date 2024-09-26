@@ -4,6 +4,7 @@ using HRbackend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRbackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240926081439_Update2 Migration")]
+    partial class Update2Migration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -518,6 +521,9 @@ namespace HRbackend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OnboardingID"));
 
+                    b.Property<bool>("Completed")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -530,6 +536,10 @@ namespace HRbackend.Migrations
                     b.Property<int>("OfferLetterStatus")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("OnboardingDocumentFilePath")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<int>("PaperworkStatus")
                         .HasColumnType("int");
 
@@ -540,6 +550,8 @@ namespace HRbackend.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("OnboardingID");
+
+                    b.HasIndex("EmployeeID");
 
                     b.ToTable("Onboardings");
                 });
@@ -647,6 +659,17 @@ namespace HRbackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("States");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.Recruitment.Onboarding", b =>
+                {
+                    b.HasOne("HRbackend.Models.Entities.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 #pragma warning restore 612, 618
         }

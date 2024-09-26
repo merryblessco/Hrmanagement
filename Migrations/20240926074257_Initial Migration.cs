@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HRbackend.Migrations
 {
     /// <inheritdoc />
-    public partial class Initialmigration : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -220,22 +220,6 @@ namespace HRbackend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Onboardings",
-                columns: table => new
-                {
-                    OnboardingID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EmployeeID = table.Column<int>(type: "int", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    OnboardingDocumentFilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Completed = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Onboardings", x => x.OnboardingID);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OvertimeTrackings",
                 columns: table => new
                 {
@@ -334,6 +318,38 @@ namespace HRbackend.Migrations
                 {
                     table.PrimaryKey("PK_TimeTracking", x => x.TimeEntryID);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Onboardings",
+                columns: table => new
+                {
+                    OnboardingID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EmployeeID = table.Column<int>(type: "int", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    OnboardingDocumentFilePath = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    Completed = table.Column<bool>(type: "bit", nullable: false),
+                    OfferLetterStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WelcomeEmailStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaperworkStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EquipmentStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Onboardings", x => x.OnboardingID);
+                    table.ForeignKey(
+                        name: "FK_Onboardings_Employees_EmployeeID",
+                        column: x => x.EmployeeID,
+                        principalTable: "Employees",
+                        principalColumn: "EmployeeID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Onboardings_EmployeeID",
+                table: "Onboardings",
+                column: "EmployeeID");
         }
 
         /// <inheritdoc />
@@ -353,9 +369,6 @@ namespace HRbackend.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmployeeDocuments");
-
-            migrationBuilder.DropTable(
-                name: "Employees");
 
             migrationBuilder.DropTable(
                 name: "Interviews");
@@ -392,6 +405,9 @@ namespace HRbackend.Migrations
 
             migrationBuilder.DropTable(
                 name: "TimeTracking");
+
+            migrationBuilder.DropTable(
+                name: "Employees");
         }
     }
 }

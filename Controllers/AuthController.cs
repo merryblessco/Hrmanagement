@@ -2,7 +2,7 @@
 using HRbackend.Data;
 using HRbackend.Models.Auth;
 using HRbackend.Models.EmployeeModels;
-using HRbackend.Models.Entities;
+using HRbackend.Models.Entities.Employees;
 using HRbackend.Models.LoginDto;
 using LinkOrgNet.Models;
 using Microsoft.AspNetCore.Http;

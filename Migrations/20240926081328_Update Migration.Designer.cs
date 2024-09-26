@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRbackend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240924083608_Initial migration")]
-    partial class Initialmigration
+    [Migration("20240926081328_Update Migration")]
+    partial class UpdateMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,7 +50,7 @@ namespace HRbackend.Migrations
                     b.ToTable("Benefits");
                 });
 
-            modelBuilder.Entity("HRbackend.Models.Entities.Employee", b =>
+            modelBuilder.Entity("HRbackend.Models.Entities.Employees.Employee", b =>
                 {
                     b.Property<int>("EmployeeID")
                         .ValueGeneratedOnAdd()
@@ -127,7 +127,7 @@ namespace HRbackend.Migrations
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("HRbackend.Models.Entities.EmployeeAssessment", b =>
+            modelBuilder.Entity("HRbackend.Models.Entities.Employees.EmployeeAssessment", b =>
                 {
                     b.Property<int>("AssessmentID")
                         .ValueGeneratedOnAdd()
@@ -154,7 +154,7 @@ namespace HRbackend.Migrations
                     b.ToTable("EmployeeAssessments");
                 });
 
-            modelBuilder.Entity("HRbackend.Models.Entities.EmployeeBenefit", b =>
+            modelBuilder.Entity("HRbackend.Models.Entities.Employees.EmployeeBenefit", b =>
                 {
                     b.Property<int>("EmployeeBenefitID")
                         .ValueGeneratedOnAdd()
@@ -180,7 +180,7 @@ namespace HRbackend.Migrations
                     b.ToTable("EmployeeBenefits");
                 });
 
-            modelBuilder.Entity("HRbackend.Models.Entities.EmployeeDocuments", b =>
+            modelBuilder.Entity("HRbackend.Models.Entities.Employees.EmployeeDocuments", b =>
                 {
                     b.Property<int>("DocumentID")
                         .ValueGeneratedOnAdd()
@@ -524,17 +524,38 @@ namespace HRbackend.Migrations
                     b.Property<bool>("Completed")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("EmployeeID")
                         .HasColumnType("int");
 
-                    b.Property<string>("OnboardingDocumentFilePath")
+                    b.Property<string>("EquipmentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OfferLetterStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("OnboardingDocumentFilePath")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("PaperworkStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("WelcomeEmailStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("OnboardingID");
+
+                    b.HasIndex("EmployeeID");
 
                     b.ToTable("Onboardings");
                 });
@@ -642,6 +663,17 @@ namespace HRbackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("States");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.Recruitment.Onboarding", b =>
+                {
+                    b.HasOne("HRbackend.Models.Entities.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 #pragma warning restore 612, 618
         }
