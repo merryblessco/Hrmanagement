@@ -53,7 +53,7 @@ namespace HRbackend.Controllers
 
             if (applicant == null)
             {
-                return NotFound();
+                return NotFound(); 
             }
 
             return Ok(applicant);
