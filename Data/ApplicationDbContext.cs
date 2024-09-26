@@ -1,6 +1,7 @@
 ﻿using HRbackend.Models.Entities;
 using HRbackend.Models.Entities.Employees;
 using HRbackend.Models.Entities.JobPosting;
+using HRbackend.Models.Entities.PayRoll;
 using HRbackend.Models.Entities.Recruitment;
 using LinkOrgNet.Models.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -31,5 +32,9 @@ namespace HRbackend.Data
         public DbSet<TimeTracking> TimeTracking { get; set; }
         public DbSet<State> States { get; set; }
         public DbSet<LGA> LGAs { get; set; }
+        public DbSet<SalaryCalculation> SalaryCalculations { get; set; }
+        public DbSet<PaySlip> PaySlips { get; set; }
+        public DbSet<TaxManagement> Taxes { get; set; }
+        public DbSet<BenefitAdministration> BenefitAdmin { get; set; }
     }
 }

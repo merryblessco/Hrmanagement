@@ -46,6 +46,14 @@ namespace HRbackend.Models.Enums
         [Description("In-progress")]
         Inprogress
     }
+    public enum BenefitType
+    {
+        [Description("Health Insurance")]
+        HealthInsurance = 1,
+        [Description("Retirement-Plan")]
+        RetirementPlan
+    }
+    
     public static class EnumExtensions
     {
         public static string GetDescription(this Enum value)

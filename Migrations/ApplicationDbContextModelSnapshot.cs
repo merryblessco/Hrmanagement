@@ -323,6 +323,127 @@ namespace HRbackend.Migrations
                     b.ToTable("OvertimeTrackings");
                 });
 
+            modelBuilder.Entity("HRbackend.Models.Entities.PayRoll.BenefitAdministration", b =>
+                {
+                    b.Property<int>("BenefitAdministrationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BenefitAdministrationId"));
+
+                    b.Property<decimal>("BenefitAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BenefitType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BenefitAdministrationId");
+
+                    b.ToTable("BenefitAdmin");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.PayRoll.PaySlip", b =>
+                {
+                    b.Property<int>("PaySlipId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaySlipId"));
+
+                    b.Property<DateTime>("DateGenerated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PayPeriod")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("TotalDeductions")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("PaySlipId");
+
+                    b.ToTable("PaySlips");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.PayRoll.SalaryCalculation", b =>
+                {
+                    b.Property<int>("SalaryCalculationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SalaryCalculationId"));
+
+                    b.Property<string>("AdjustmentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("BasicSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Bonus")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CalculationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Deductions")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Fullname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Resoans")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SalaryCalculationId");
+
+                    b.ToTable("SalaryCalculations");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.PayRoll.TaxManagement", b =>
+                {
+                    b.Property<int>("TaxManagementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaxManagementId"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("IncomeTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MedicareTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SocialSecurityTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("TaxYear")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TaxManagementId");
+
+                    b.ToTable("Taxes");
+                });
+
             modelBuilder.Entity("HRbackend.Models.Entities.Payroll", b =>
                 {
                     b.Property<int>("PayrollID")

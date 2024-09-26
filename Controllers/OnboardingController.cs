@@ -57,8 +57,9 @@ namespace HRbackend.Controllers
         [HttpPost("AddNew-Onboarding")]
         public ActionResult<Onboarding> CreateOnboarding([FromForm] OnboardingDto onboarding)
         {
-
-            var onboardingRequest = new Onboarding
+            var startDate = DateTime.Now;
+            onboarding.StartDate = startDate;
+           var onboardingRequest = new Onboarding
             {
                 EmployeeID = onboarding.EmployeeID,
                 StartDate = onboarding.StartDate,

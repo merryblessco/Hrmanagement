@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using HRbackend.Models.Entities.PayRoll;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRbackend.Models.EmployeeModels
 {
@@ -22,5 +23,9 @@ namespace HRbackend.Models.EmployeeModels
         [ForeignKey("ManagerID")]
         public int ManagerID { get; set; }
         public bool IsAdmin { get; set; }
+        public ICollection<SalaryCalculation> SalaryCalculations { get; set; }
+        public ICollection<PaySlip> PaySlips { get; set; }
+        public ICollection<TaxManagement> Taxes { get; set; }
+        public ICollection<BenefitAdministration> BenefitsAdmin { get; set; }
     }
 }
