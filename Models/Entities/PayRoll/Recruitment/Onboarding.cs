@@ -11,7 +11,7 @@ namespace HRbackend.Models.Entities.Recruitment
         public int OnboardingID { get; set; }
         [ForeignKey("EmployeeID")]
         public int EmployeeID { get; set; }
-        public DateTime StartDate { get; set; }
+        public DateTime ResumptionDate { get; set; }
 
         public int OfferLetterStatus { get; set; } // e.g., Sent, Accepted
         public int WelcomeEmailStatus { get; set; } // e.g., Sent, Pending

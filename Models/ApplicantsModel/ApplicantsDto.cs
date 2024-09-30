@@ -1,4 +1,5 @@
 ﻿using HRbackend.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRbackend.Models.ApplicantsModel
@@ -20,6 +21,7 @@ namespace HRbackend.Models.ApplicantsModel
         public DateTime ApplicationDate { get; set; }
 
         public IFormFile Resume { get; set; }
-        public byte[] ResumeFile { get; set; }
+       
+        public byte[]? ResumeFile { get; set; }
     }
 }

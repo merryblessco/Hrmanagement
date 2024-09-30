@@ -7,7 +7,7 @@ namespace HRbackend.Models.EmployeeModels
     {
         [ForeignKey("EmployeeID")]
         public int EmployeeID { get; set; }
-        public DateTime StartDate { get; set; }
+        public DateTime ResumptionDate { get; set; }
         //public string OnboardingDocumentFilePath { get; set; }
         public int? OfferLetterStatus { get; set; } // e.g., Sent, Accepted
         public int? WelcomeEmailStatus { get; set; } // e.g., Sent, Pending

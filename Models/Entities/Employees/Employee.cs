@@ -17,7 +17,6 @@ namespace HRbackend.Models.Entities.Employees
         public string Department { get; set; }
         public string Position { get; set; }
         public string PassportPath { get; set; }
-        public string ResumePath { get; set; }
         public string State { get; set; }
         public string LGA { get; set; }
         public string Password { get; set; }
@@ -27,5 +26,6 @@ namespace HRbackend.Models.Entities.Employees
         [ForeignKey("ManagerID")]
         public int ManagerID { get; set; }
         public bool IsAdmin { get; set; }
+        public byte[] PassporthFile { get; set; }
     }
 }

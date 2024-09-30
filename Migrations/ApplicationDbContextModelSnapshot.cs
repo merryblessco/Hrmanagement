@@ -99,6 +99,10 @@ namespace HRbackend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("PassporthFile")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -108,10 +112,6 @@ namespace HRbackend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Position")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResumePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -654,7 +654,7 @@ namespace HRbackend.Migrations
                     b.Property<int>("PaperworkStatus")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTime>("ResumptionDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("WelcomeEmailStatus")

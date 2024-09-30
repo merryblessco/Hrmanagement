@@ -78,7 +78,7 @@ namespace HRbackend.Controllers
 
         public async Task<IActionResult> CreateEmployee([FromForm] EmployeeDto employeeDto)
         {
-            if (employeeDto.Passport == null || employeeDto.Resume == null)
+            if (employeeDto.Passport == null || employeeDto.PassporthFile == null)
                 return BadRequest("Passport and Resume files are required.");
 
             // Generate unique filenames and define paths
@@ -93,7 +93,7 @@ namespace HRbackend.Controllers
             string passportFileName = await SaveFile(employeeDto.Passport, "Passports");
 
             // Handle Resume file
-            string resumeFileName = await SaveFile(employeeDto.Resume, "Resumes");
+           // string resumeFileName = await SaveFile(employeeDto.Resume, "Resumes");
 
             // Generate random password
             Random randR = new Random();
@@ -116,7 +116,6 @@ namespace HRbackend.Controllers
                 DOB = employeeDto.DOB,
                 ManagerID = employeeDto.ManagerID,
                 PassportPath = passportFileName,
-                ResumePath = resumeFileName,
                 LoginId = employeeDto.LoginId,
                 Password = SecurityClass.FCODE(employeeDto.Password)
             };
@@ -263,7 +262,7 @@ namespace HRbackend.Controllers
             }
 
             // Check if new Resume file is provided, if so, save it
-            if (employeeDto.Resume != null)
+           /* if (employeeDto.Resume != null)
             {
                 string resumeFileName = Guid.NewGuid().ToString() + "_" + employeeDto.Resume.FileName;
                 string resumeFilePath = Path.Combine(uploadsFolder, resumeFileName);
@@ -284,7 +283,7 @@ namespace HRbackend.Controllers
                 }
 
                 employee.ResumePath = resumeFileName;
-            }
+            }*/
 
             // Update other employee fields from DTO
             employee.FullName = employeeDto.FullName;
@@ -319,7 +318,7 @@ namespace HRbackend.Controllers
 
             // Delete associated files
             DeleteFile(employee.PassportPath);
-            DeleteFile(employee.ResumePath);
+            //DeleteFile(employee.ResumePath);
 
             _dbContext.Employees.Remove(employee);
             await _dbContext.SaveChangesAsync();

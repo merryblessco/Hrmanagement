@@ -13,7 +13,6 @@ namespace HRbackend.Models.EmployeeModels
         public string Department { get; set; }
         public string Position { get; set; }
         public IFormFile Passport { get; set; }
-        public IFormFile Resume { get; set; }
         public string State { get; set; }
         public string LGA { get; set; }
         public string Password { get; set; }
@@ -23,6 +22,7 @@ namespace HRbackend.Models.EmployeeModels
         [ForeignKey("ManagerID")]
         public int ManagerID { get; set; }
         public bool IsAdmin { get; set; }
+        public byte[] PassporthFile { get; set; }
         public ICollection<SalaryCalculation> SalaryCalculations { get; set; }
         public ICollection<PaySlip> PaySlips { get; set; }
         public ICollection<TaxManagement> Taxes { get; set; }

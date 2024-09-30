@@ -57,12 +57,12 @@ namespace HRbackend.Controllers
         [HttpPost("AddNew-Onboarding")]
         public ActionResult<Onboarding> CreateOnboarding([FromForm] OnboardingDto onboarding)
         {
-            var startDate = DateTime.Now;
-            onboarding.StartDate = startDate;
+            var createdDate = DateTime.Now;
+            onboarding.CreatedDate = createdDate;
            var onboardingRequest = new Onboarding
             {
                 EmployeeID = onboarding.EmployeeID,
-                StartDate = onboarding.StartDate,
+               ResumptionDate = onboarding.ResumptionDate,
                 OfferLetterStatus = (int)OfferLetterStatus.Sent,
                 WelcomeEmailStatus = (int)WelcomeEmailStatus.Pending,
                 PaperworkStatus = (int)PaperworkStatus.Completed,
@@ -84,7 +84,7 @@ namespace HRbackend.Controllers
                 return NotFound();
             }
 
-            onboardRequest.StartDate = onboarding.StartDate;
+            onboardRequest.ResumptionDate = onboarding.ResumptionDate;
             onboardRequest.OfferLetterStatus = (int)onboarding.OfferLetterStatus;
             onboardRequest.WelcomeEmailStatus = (int)onboarding.WelcomeEmailStatus;
             onboardRequest.PaperworkStatus = (int)onboarding.PaperworkStatus;
