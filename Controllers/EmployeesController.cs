@@ -1,10 +1,12 @@
-﻿using HRbackend.Data;
+﻿using Azure.Core;
+using HRbackend.Data;
 using HRbackend.Models.EmployeeModels;
 using HRbackend.Models.Entities.Employees;
 using LinkOrgNet.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
@@ -92,8 +94,22 @@ namespace HRbackend.Controllers
             // Handle Passport file
             string passportFileName = await SaveFile(employeeDto.Passport, "Passports");
 
-            // Handle Resume file
-           // string resumeFileName = await SaveFile(employeeDto.Resume, "Resumes");
+            // Validate file types (pdf, jpeg, word)
+            var allowedExtensions = new[] { ".pdf", ".jpeg", ".jpg", ".doc", ".docx" };
+            var fileExtension = Path.GetExtension(employeeDto.Passport.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Only PDF, JPEG, and Word files are allowed.");
+            }
+
+            // Convert the file to a byte array
+            byte[] fileBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await employeeDto.Passport.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
 
             // Generate random password
             Random randR = new Random();
@@ -116,6 +132,7 @@ namespace HRbackend.Controllers
                 DOB = employeeDto.DOB,
                 ManagerID = employeeDto.ManagerID,
                 PassportPath = passportFileName,
+                PassporthFile = fileBytes,
                 LoginId = employeeDto.LoginId,
                 Password = SecurityClass.FCODE(employeeDto.Password)
             };
