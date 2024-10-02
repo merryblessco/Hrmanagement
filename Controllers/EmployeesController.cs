@@ -20,6 +20,12 @@ namespace HRbackend.Controllers
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
+
+        private readonly string _smtpHost = "smtp.gmail.com";
+        private readonly int _smtpPort = 587;
+        private readonly string _senderEmail = "hrsolutionsdev@gmail.com";
+        private readonly string _senderPassword = "P@$$4w0rld"; // Store this in a secure location, such as environment variables.
+
         public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
@@ -359,29 +365,52 @@ namespace HRbackend.Controllers
                 }
             }
         }
+        // POST: api/Employees
+        [HttpPost("Send-Mail")]
         private async Task SendEmailAsync(string email, string subject, string message)
         {
-            var smtpClient = new SmtpClient("smtp.gmail.com")
+            using var smtpClient = new SmtpClient(_smtpHost)
             {
-                Port = 587, // Gmail uses port 587 for TLS
-                Credentials = new NetworkCredential(
-                    "hrsolutionsdev@gmail.com",
-                    "P@$$4w0rld"
-                ),
+                Port = _smtpPort,
+                Credentials = new NetworkCredential(_senderEmail, _senderPassword),
                 EnableSsl = true,
             };
 
-            var mailMessage = new MailMessage
+            using var mailMessage = new MailMessage
             {
-                From = new MailAddress("hrsolutionsdev@gmail.com"),
+                From = new MailAddress(_senderEmail),
                 Subject = subject,
                 Body = message,
-                IsBodyHtml = true,
+                IsBodyHtml = true, // Set to true if the message body is in HTML format
             };
             mailMessage.To.Add(email);
 
             await smtpClient.SendMailAsync(mailMessage);
         }
+
+         /*private async Task SendEmailAsync(string email, string subject, string message)
+         {
+             var smtpClient = new SmtpClient("smtp.gmail.com")
+             {
+                 Port = 587, // Gmail uses port 587 for TLS
+                 Credentials = new NetworkCredential(
+                     "hrsolutionsdev@gmail.com",
+                     "P@$$4w0rld"
+                 ),
+                 EnableSsl = true,
+             };
+
+             var mailMessage = new MailMessage
+             {
+                 From = new MailAddress("hrsolutionsdev@gmail.com"),
+                 Subject = subject,
+                 Body = message,
+                 IsBodyHtml = true,
+             };
+             mailMessage.To.Add(email);
+
+             await smtpClient.SendMailAsync(mailMessage);
+         }*/
 
 
     }
