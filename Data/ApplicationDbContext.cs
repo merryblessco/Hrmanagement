@@ -3,7 +3,7 @@ using HRbackend.Models.Entities.Employees;
 using HRbackend.Models.Entities.JobPosting;
 using HRbackend.Models.Entities.PayRoll;
 using HRbackend.Models.Entities.Recruitment;
-using LinkOrgNet.Models.Entities;
+using HRbackend.Models.Entities.Setups;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRbackend.Data

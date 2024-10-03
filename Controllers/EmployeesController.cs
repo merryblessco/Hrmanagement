@@ -366,7 +366,7 @@ namespace HRbackend.Controllers
             }
         }
         // POST: api/Employees
-        [HttpPost("Send-Mail")]
+        /*[HttpPost("Send-Mail")]
         private async Task SendEmailAsync(string email, string subject, string message)
         {
             using var smtpClient = new SmtpClient(_smtpHost)
@@ -386,32 +386,67 @@ namespace HRbackend.Controllers
             mailMessage.To.Add(email);
 
             await smtpClient.SendMailAsync(mailMessage);
+        }*/
+
+        private async Task SendEmailAsync(string email, string subject, string message)
+        {
+            var smtpClient = new SmtpClient("smtp.gmail.com")
+            {
+                Port = 587, // Gmail uses port 587 for TLS
+                Credentials = new NetworkCredential(
+                    "hrsolutionsdev@gmail.com",
+                    "P@$$4w0rld"
+                ),
+                EnableSsl = true,
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress("hrsolutionsdev@gmail.com"),
+                Subject = subject,
+                Body = message,
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(email);
+
+            await smtpClient.SendMailAsync(mailMessage);
         }
 
-         /*private async Task SendEmailAsync(string email, string subject, string message)
-         {
-             var smtpClient = new SmtpClient("smtp.gmail.com")
-             {
-                 Port = 587, // Gmail uses port 587 for TLS
-                 Credentials = new NetworkCredential(
-                     "hrsolutionsdev@gmail.com",
-                     "P@$$4w0rld"
-                 ),
-                 EnableSsl = true,
-             };
+        /*[HttpPost]
+        [Route("SendEmail")]
+        public IActionResult SendMail(string toEmail, string subject, string emailBody)
+        {
+            try
+            {
+                // Configure the SMTP client
+                using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
+                {
+                    client.EnableSsl = true;
+                    client.UseDefaultCredentials = false;
+                    client.Credentials = new NetworkCredential("hrsolutionsdev@gmail.com", "P@$$4w0rld");
 
-             var mailMessage = new MailMessage
-             {
-                 From = new MailAddress("hrsolutionsdev@gmail.com"),
-                 Subject = subject,
-                 Body = message,
-                 IsBodyHtml = true,
-             };
-             mailMessage.To.Add(email);
+                    // Create email message
+                    MailMessage mailMessage = new MailMessage
+                    {
+                        From = new MailAddress("hrsolutionsdev@gmail.com"),
+                        Subject = subject,
+                        IsBodyHtml = true,
+                        Body = $"<h1>Response</h1><br />{emailBody}"
+                    };
+                    mailMessage.To.Add(toEmail);
 
-             await smtpClient.SendMailAsync(mailMessage);
-         }*/
+                    // Send email
+                    client.Send(mailMessage);
+                }
 
+                return Ok("Email sent successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Return an error response if the email fails to send
+                return StatusCode(500, $"Internal server error:{ex.Message}");
+             }
 
+        }*/
     }
 }

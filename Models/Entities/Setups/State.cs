@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace LinkOrgNet.Models.Entities
+namespace HRbackend.Models.Entities.Setups
 {
-    public class LGA
+    public class State
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
