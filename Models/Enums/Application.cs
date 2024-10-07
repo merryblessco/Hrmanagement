@@ -53,7 +53,19 @@ namespace HRbackend.Models.Enums
         [Description("Retirement-Plan")]
         RetirementPlan
     }
-    
+    public enum InterViewStatus
+    {
+        [Description("scheduled")]
+        scheduled = 1,
+        [Description("Completed")]
+        Completed,
+        [Description("Onboarded")]
+        Onboarded,
+        [Description("Failed")]
+        Failed
+
+    }
+
     public static class EnumExtensions
     {
         public static string GetDescription(this Enum value)

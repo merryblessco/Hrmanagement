@@ -178,74 +178,6 @@ namespace HRbackend.Controllers
 
             return Path.Combine(subFolder, uniqueFileName);
         }
-
-        //public async Task<IActionResult> CreateEmployee([FromForm] EmployeeDto employeeDto)
-        //{
-        //    if (employeeDto.Passport == null || employeeDto.Resume == null)
-        //        return BadRequest("Passport and Resume files are required.");
-
-        //    // Generate unique filenames and define paths
-        //    string uploadsFolder = _environment?.WebRootPath != null    ? Path.Combine(_environment.WebRootPath, "uploads")   : Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-        //    //string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
-
-        //    if (!Directory.Exists(uploadsFolder))
-        //        Directory.CreateDirectory(uploadsFolder);
-
-        //    string passportFileName = Guid.NewGuid().ToString() + "_" + employeeDto.Passport.ToString();
-        //    string resumeFileName = Guid.NewGuid().ToString() + "_" + employeeDto.Resume.ToString();
-
-        //    string passportFilePath = Path.Combine(uploadsFolder, passportFileName);
-        //    string resumeFilePath = Path.Combine(uploadsFolder, resumeFileName);
-
-        //    // Save the uploaded files
-
-        //    using (var passportStream = new FileStream(passportFilePath, FileMode.Create))
-        //    {
-        //        // This is the correct use of CopyToAsync on an IFormFile (employeeDto.Passport)
-        //        await employeeDto.Passport.CopyToAsync(passportStream);
-        //    }
-
-        //    using (var resumeStream = new FileStream(resumeFilePath, FileMode.Create))
-        //    {
-        //        // This is the correct use of CopyToAsync on an IFormFile (employeeDto.Resume)
-        //        await employeeDto.Resume.CopyToAsync(resumeStream);
-        //    }
-        //    Random randR = new Random();
-        //    int R = randR.Next(0000, 2222);
-        //    employeeDto.Password = "HR" + R.ToString();
-        //    // Create Employee object and map fields from DTO
-        //    var employee = new Employee
-        //    {
-        //        FullName = employeeDto.FullName,
-        //        Email = employeeDto.Email,
-        //        PhoneNumber = employeeDto.PhoneNumber,
-        //        Address = employeeDto.Address,
-        //        JobTitle = employeeDto.JobTitle,
-        //        Department = employeeDto.Department,
-        //        Position = employeeDto.Position,
-        //        State = employeeDto.State,
-        //        LGA = employeeDto.LGA,
-        //        HireDate = employeeDto.HireDate,
-        //        DOB = employeeDto.DOB,
-        //        ManagerID = employeeDto.ManagerID,
-        //        PassportPath = passportFileName,
-        //        ResumePath = resumeFileName,
-        //        LoginId = employeeDto.LoginId,
-        //        Password = SecurityClass.FCODE(employeeDto.Password)
-        //    };
-
-        //    // Save employee to the database
-        //    _dbContext.Employees.Add(employee);
-        //    await _dbContext.SaveChangesAsync();
-        //    // Send welcome email
-        //    string subject = "Welcome to Tavai-Tech Solutions";
-        //    string message = $"<h1>Welcome, {employee.FullName}!</h1><p>We're excited to have you join our team.</p>";
-        //    await SendEmailAsync(employee.Email, subject, message);
-
-        //    return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeID }, employee);
-        //    //return Ok(new { employee.EmployeeID });
-        //}
-        // PUT: api/Employees/5
         [HttpPut("updateEmployee/{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, [FromForm] EmployeeDto employeeDto)
         {
@@ -365,28 +297,6 @@ namespace HRbackend.Controllers
                 }
             }
         }
-        // POST: api/Employees
-        /*[HttpPost("Send-Mail")]
-        private async Task SendEmailAsync(string email, string subject, string message)
-        {
-            using var smtpClient = new SmtpClient(_smtpHost)
-            {
-                Port = _smtpPort,
-                Credentials = new NetworkCredential(_senderEmail, _senderPassword),
-                EnableSsl = true,
-            };
-
-            using var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_senderEmail),
-                Subject = subject,
-                Body = message,
-                IsBodyHtml = true, // Set to true if the message body is in HTML format
-            };
-            mailMessage.To.Add(email);
-
-            await smtpClient.SendMailAsync(mailMessage);
-        }*/
 
         private async Task SendEmailAsync(string email, string subject, string message)
         {
@@ -411,42 +321,5 @@ namespace HRbackend.Controllers
 
             await smtpClient.SendMailAsync(mailMessage);
         }
-
-        /*[HttpPost]
-        [Route("SendEmail")]
-        public IActionResult SendMail(string toEmail, string subject, string emailBody)
-        {
-            try
-            {
-                // Configure the SMTP client
-                using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
-                {
-                    client.EnableSsl = true;
-                    client.UseDefaultCredentials = false;
-                    client.Credentials = new NetworkCredential("hrsolutionsdev@gmail.com", "P@$$4w0rld");
-
-                    // Create email message
-                    MailMessage mailMessage = new MailMessage
-                    {
-                        From = new MailAddress("hrsolutionsdev@gmail.com"),
-                        Subject = subject,
-                        IsBodyHtml = true,
-                        Body = $"<h1>Response</h1><br />{emailBody}"
-                    };
-                    mailMessage.To.Add(toEmail);
-
-                    // Send email
-                    client.Send(mailMessage);
-                }
-
-                return Ok("Email sent successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Return an error response if the email fails to send
-                return StatusCode(500, $"Internal server error:{ex.Message}");
-             }
-
-        }*/
     }
 }
