@@ -1,6 +1,5 @@
 ﻿using HRbackend.Models.Entities;
 using HRbackend.Models.Entities.Employees;
-using HRbackend.Models.Entities.JobPosting;
 using HRbackend.Models.Entities.PayRoll;
 using HRbackend.Models.Entities.Recruitment;
 using HRbackend.Models.Entities.Setups;

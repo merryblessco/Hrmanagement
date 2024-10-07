@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace HRbackend.Models.Entities.JobPosting
+namespace HRbackend.Models.Entities.Recruitment
 {
     public class JobPostings
     {

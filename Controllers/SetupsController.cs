@@ -86,40 +86,7 @@ namespace HRbackend.Controllers
             await smtpClient.SendMailAsync(mailMessage);
         }
 
-        [HttpPost]
-        [Route("Send-invites")]
-        public async Task<IActionResult> SendInvites([FromBody] InterviewDto interviewDto)
-        {
-            interviewDto.DateCreated= DateTime.Now;
-
-            // Create Employee object and map fields from DTO
-            var interview = new Interview
-            {
-                JobID = interviewDto.JobID,
-                ApplicantID = interviewDto.ApplicantID,
-                ApplicantEmail = interviewDto.ApplicantEmail,
-                ApplicatMobile = interviewDto.ApplicatMobile,
-                MeetingLink = interviewDto.MeetingLink,
-                MeetingNote = interviewDto.MeetingNote,
-                Fullname = interviewDto.Fullname,
-                Feedback = interviewDto.Feedback,
-                Interviewers = interviewDto.Interviewers,
-                InterviewDate = interviewDto.InterviewDate,
-                Status = (int)InterViewStatus.scheduled,
-                DateCreated = interviewDto.DateCreated
-            };
-
-            // Save employee to the datainterviewbase
-            _dbContext.Interviews.Add(interview);
-            await _dbContext.SaveChangesAsync();
-
-            // Send welcome email
-            string subject = "Interview Schedule";
-            string message = $"<h1>Dear, {interview.Fullname}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
-            //await SendEmailAsync(interview.ApplicantEmail, subject, message);
-
-            return CreatedAtAction(nameof(GetInterviews), new { ApplicantID = interview.ApplicantID }, interview);
-        }
+      
         // GET: api/Intervie/5
         [HttpGet("{ApplicantID}")]
         public async Task<ActionResult<Interview>> GetInterviews(int ApplicantID)

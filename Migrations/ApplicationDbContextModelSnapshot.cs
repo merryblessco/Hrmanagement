@@ -204,72 +204,6 @@ namespace HRbackend.Migrations
                     b.ToTable("EmployeeDocuments");
                 });
 
-            modelBuilder.Entity("HRbackend.Models.Entities.JobPosting.JobPostings", b =>
-                {
-                    b.Property<int>("JobID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("JobID"));
-
-                    b.Property<string>("Benefits")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CompanyAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("JobCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("JobMode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("JobTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("MaxSalaryRange")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("MinSalaryRange")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("PostingDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Qualifications")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Responsibilities")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WorkMode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("JobID");
-
-                    b.ToTable("JobPostings");
-                });
-
             modelBuilder.Entity("HRbackend.Models.Entities.LeaveRequest", b =>
                 {
                     b.Property<int>("LeaveRequestID")
@@ -622,6 +556,8 @@ namespace HRbackend.Migrations
 
                     b.HasKey("InterviewID");
 
+                    b.HasIndex("ApplicantID");
+
                     b.ToTable("Interviews");
                 });
 
@@ -653,6 +589,72 @@ namespace HRbackend.Migrations
                     b.HasKey("HistoryID");
 
                     b.ToTable("JobHistorys");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.Recruitment.JobPostings", b =>
+                {
+                    b.Property<int>("JobID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("JobID"));
+
+                    b.Property<string>("Benefits")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JobCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JobMode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MaxSalaryRange")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MinSalaryRange")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("PostingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Qualifications")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Responsibilities")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WorkMode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("JobID");
+
+                    b.ToTable("JobPostings");
                 });
 
             modelBuilder.Entity("HRbackend.Models.Entities.Recruitment.Onboarding", b =>
@@ -792,6 +794,17 @@ namespace HRbackend.Migrations
                     b.HasKey("TimeEntryID");
 
                     b.ToTable("TimeTracking");
+                });
+
+            modelBuilder.Entity("HRbackend.Models.Entities.Recruitment.Interview", b =>
+                {
+                    b.HasOne("HRbackend.Models.Entities.Recruitment.Applicants", "Applicant")
+                        .WithMany()
+                        .HasForeignKey("ApplicantID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Applicant");
                 });
 #pragma warning restore 612, 618
         }

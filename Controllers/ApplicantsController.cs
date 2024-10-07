@@ -39,7 +39,7 @@ namespace HRbackend.Controllers
         {
             var applications = await _dbContext.Applicants.ToListAsync();
             var applications2 = _mapper.Map<IEnumerable<ApplicantsDto>>(applications);
-            foreach (var application  in applications2)
+            foreach (var application in applications2)
             {
                 application.StatusText = application.Status.GetDescription();
             }
@@ -47,14 +47,14 @@ namespace HRbackend.Controllers
         }
         // GET: api/Applicants/{id}
         [HttpGet("{ApplicantID}")]
-        
+
         public async Task<IActionResult> GetApplicant(int ApplicantID)
         {
             var applicant = await _dbContext.Applicants.FindAsync(ApplicantID);
 
             if (applicant == null)
             {
-                return NotFound(); 
+                return NotFound();
             }
 
             var applicant1 = _mapper.Map<ApplicantsDto>(applicant);
@@ -87,7 +87,7 @@ namespace HRbackend.Controllers
         public async Task<IActionResult> CreateApplicant([FromForm] ApplicantsDto request)
         {
 
-           
+
             // Check if the file is valid
             if (request.Resume == null || request.Resume.Length == 0)
             {
@@ -118,7 +118,7 @@ namespace HRbackend.Controllers
             formData.Add(fileContent, "ResumeFile", "resume.pdf");
 
             // Send the request
-           // await httpClient.PostAsync("api/your-endpoint", formData);
+            // await httpClient.PostAsync("api/your-endpoint", formData);
 
             var fileName = await SaveResumeFile(request.Resume);
             var applicant = new Applicants
@@ -226,7 +226,7 @@ namespace HRbackend.Controllers
             return fileName;
         }
 
-        
+
 
         [HttpGet("download-file")]
         public IActionResult DownloadFile()
@@ -268,6 +268,119 @@ namespace HRbackend.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("Send-invite")]
+        public async Task<IActionResult> SendInvites([FromBody] InterviewDto interviewDto)
+        {
+            interviewDto.DateCreated = DateTime.Now;
+
+            // Create Employee object and map fields from DTO
+            var interview = new Interview
+            {
+                JobID = interviewDto.JobID,
+                ApplicantID = interviewDto.ApplicantID,
+                //ApplicantEmail = interviewDto.ApplicantEmail,
+                //ApplicatMobile = interviewDto.ApplicatMobile,
+                MeetingLink = interviewDto.MeetingLink,
+                MeetingNote = interviewDto.MeetingNote,
+                //Fullname = interviewDto.Fullname,
+                //Feedback = interviewDto.Feedback,
+                Interviewers = interviewDto.Interviewers,
+                InterviewDate = interviewDto.InterviewDate,
+                Status = InterViewStatus.scheduled,
+                DateCreated = interviewDto.DateCreated
+            };
+
+            // Save employee to the datainterviewbase
+            _dbContext.Interviews.Add(interview);
+            await _dbContext.SaveChangesAsync();
+
+            // Send welcome email
+            string subject = "Interview Schedule";
+            string message = $"<h1>Dear, {interview.Fullname}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
+            //await SendEmailAsync(interview.ApplicantEmail, subject, message);
+
+            return Ok(interview);
+        }
+
+
+        [HttpPost]
+        [Route("invitation")]
+        public async Task<IActionResult> Invitation([FromBody] InterviewRequest interviewRequest)
+        {
+            var interview = await _dbContext.Interviews.Include(x => x.Applicant)
+                                                       .Where(x => x.JobID == interviewRequest.JobID && x.ApplicantID == interviewRequest.ApplicantID)
+                                                       .FirstOrDefaultAsync();
+
+            if (interview == null)
+            {
+                return NotFound();
+            }
+
+            InterviewDto obj = new InterviewDto
+            {
+                ApplicantEmail = interview.Applicant.Email,
+                ApplicantID = interview.Applicant.ApplicantID,
+                ApplicatMobile = interview.Applicant.PhoneNumber,
+                Fullname = interview.Applicant.FirstName + " " + interview.Applicant.LastName,
+                InterviewDate = interview.Applicant.ApplicationDate,
+                DateCreated = interview.DateCreated,
+                MeetingLink = interview.MeetingLink,
+                MeetingNote = interview.MeetingNote,
+                Interviewers = interview.Interviewers,
+                JobID = interviewRequest.JobID,
+                StatusName = interview.Status.GetDescription()
+            };
+
+            return Ok(obj);
+        }
+
+        [HttpGet]
+        [Route("invitations")]
+        public async Task<IActionResult> Invitations([FromQuery] int jobId)
+        {
+            var interviews = await _dbContext.Interviews.Include(x => x.Applicant)
+                                                       .Where(x => x.JobID == jobId)
+                                                       .ToListAsync();
+
+            if (interviews == null)
+            {
+                return NotFound();
+            }
+
+            var interviewsObj = new List<InterviewDto>();
+
+            foreach (var item in interviews)
+            {
+                var interview = await _dbContext.Interviews.Include(x => x.Applicant)
+                                                                      .Where(x => x.JobID == item.JobID && x.ApplicantID == item.ApplicantID)
+                                                                      .FirstOrDefaultAsync();
+
+                if (interview == null)
+                {
+                    return NotFound();
+                }
+
+                InterviewDto obj = new InterviewDto
+                {
+                    ApplicantEmail = interview.Applicant.Email,
+                    ApplicantID = interview.Applicant.ApplicantID,
+                    ApplicatMobile = interview.Applicant.PhoneNumber,
+                    Fullname = interview.Applicant.FirstName + " " + interview.Applicant.LastName,
+                    InterviewDate = interview.Applicant.ApplicationDate,
+                    DateCreated = interview.DateCreated,
+                    MeetingLink = interview.MeetingLink,
+                    MeetingNote = interview.MeetingNote,
+                    Interviewers = interview.Interviewers,
+                    JobID = interview.JobID,
+                    StatusName = interview.Status.GetDescription()
+                };
+
+                interviewsObj.Add(obj);
+            }
+
+            return Ok(interviewsObj);
+        }
     }
 
 }

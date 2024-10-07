@@ -2,7 +2,7 @@
 using HRbackend.Data;
 using HRbackend.Models.EmployeeModels;
 using HRbackend.Models.Entities;
-using HRbackend.Models.Entities.JobPosting;
+using HRbackend.Models.Entities.Recruitment;
 using HRbackend.Models.RecruitmentModel;
 using LinkOrgNet.Models;
 using Microsoft.AspNetCore.Mvc;

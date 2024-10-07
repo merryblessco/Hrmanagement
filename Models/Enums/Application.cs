@@ -57,12 +57,9 @@ namespace HRbackend.Models.Enums
     {
         [Description("scheduled")]
         scheduled = 1,
-        [Description("Completed")]
-        Completed,
-        [Description("Onboarded")]
-        Onboarded,
-        [Description("Failed")]
-        Failed
+        [Description("Interviewd")]
+        Completed
+      
 
     }
 
