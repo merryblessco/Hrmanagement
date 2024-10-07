@@ -15,7 +15,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("LinkOrgDBCon")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HrDBCon")));
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
