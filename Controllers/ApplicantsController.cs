@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace HRbackend.Controllers
 {
@@ -56,9 +57,12 @@ namespace HRbackend.Controllers
                 return NotFound(); 
             }
 
-            return Ok(applicant);
+            var applicant1 = _mapper.Map<ApplicantsDto>(applicant);
+            applicant1.StatusText = applicant.Status.GetDescription();
+
+            return Ok(applicant1);
         }
-        [HttpGet("GetllApplicantsBy/{JobId}")]
+        [HttpGet("get-all-applicants-by-job-id/{JobId}")]
         public async Task<IActionResult> GetApplicants(int JobId)
         {
             var applicants = await _dbContext.Applicants
