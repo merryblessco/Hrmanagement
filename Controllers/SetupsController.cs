@@ -13,6 +13,7 @@ using System.Linq;
 using HRbackend.Models.ApplicantsModel;
 using HRbackend.Models.Entities.Recruitment;
 using HRbackend.Models.Enums;
+using HRbackend.Models.Entities.Setups;
 
 namespace HRbackend.Controllers
 {
@@ -94,6 +95,90 @@ namespace HRbackend.Controllers
             var interview = await _dbContext.Interviews.FindAsync(ApplicantID);
             if (interview == null) return NotFound();
             return interview;
+        }
+
+        // GET: api/Department
+        [HttpGet]
+        [Route("get-all-department")]
+        public async Task<ActionResult<IEnumerable<Department>>> GetDepartments()
+        {
+            return await _dbContext.Departments.ToListAsync();
+        }
+        // GET: api/Department/5
+        [HttpGet]
+        [Route("get-department-by-{id}")]
+        public async Task<ActionResult<Department>> GetDepartment(int id)
+        {
+            var department = await _dbContext.Departments.FindAsync(id);
+
+            if (department == null)
+            {
+                return NotFound();
+            }
+
+            return department;
+        }
+        // POST: api/Department
+        [HttpPost]
+        [Route("add-new-department")]
+        public async Task<ActionResult<Department>> PostDepartment(Department department)
+        {
+            department.CreatedDate = DateTime.UtcNow;
+            _dbContext.Departments.Add(department);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentId }, department);
+        }
+        // PUT: api/Department/5
+        [HttpPut]
+        [Route("update-department-by-{id}")]
+        public async Task<IActionResult> PutDepartment(int id, Department department)
+        {
+            if (id != department.DepartmentId)
+            {
+                return BadRequest();
+            }
+
+            _dbContext.Entry(department).State = EntityState.Modified;
+
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DepartmentExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        // DELETE: api/Department/5
+        [HttpDelete]
+        [Route("delete-department-by-{id}")]
+        public async Task<IActionResult> DeleteDepartment(int id)
+        {
+            var department = await _dbContext.Departments.FindAsync(id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+
+            _dbContext.Departments.Remove(department);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool DepartmentExists(int id)
+        {
+            return _dbContext.Departments.Any(e => e.DepartmentId == id);
         }
 
     }

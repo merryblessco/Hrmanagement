@@ -35,5 +35,6 @@ namespace HRbackend.Data
         public DbSet<PaySlip> PaySlips { get; set; }
         public DbSet<TaxManagement> Taxes { get; set; }
         public DbSet<BenefitAdministration> BenefitAdmin { get; set; }
+        public DbSet<Department> Departments { get; set; }
     }
 }
