@@ -269,26 +269,28 @@ namespace HRbackend.Controllers
         }
 
         [HttpPost]
-        [Route("Send-invite")]
-        public async Task<IActionResult> SendInvites([FromBody] InterviewDto interviewDto)
+        [Route("send-invite")]
+        public async Task<IActionResult> SendInvites([FromBody] SendInvitationRequest interviewDto)
         {
-            interviewDto.DateCreated = DateTime.Now;
+
+            var applicant = await _dbContext.Applicants.FindAsync(interviewDto.ApplicantID);
+
+            if (applicant == null)
+            {
+                return NotFound();
+            }
 
             // Create Employee object and map fields from DTO
             var interview = new Interview
             {
                 JobID = interviewDto.JobID,
                 ApplicantID = interviewDto.ApplicantID,
-                //ApplicantEmail = interviewDto.ApplicantEmail,
-                //ApplicatMobile = interviewDto.ApplicatMobile,
                 MeetingLink = interviewDto.MeetingLink,
                 MeetingNote = interviewDto.MeetingNote,
-                //Fullname = interviewDto.Fullname,
-                //Feedback = interviewDto.Feedback,
                 Interviewers = interviewDto.Interviewers,
                 InterviewDate = interviewDto.InterviewDate,
                 Status = InterViewStatus.scheduled,
-                DateCreated = interviewDto.DateCreated
+                DateCreated = DateTime.Now
             };
 
             // Save employee to the datainterviewbase
@@ -297,10 +299,10 @@ namespace HRbackend.Controllers
 
             // Send welcome email
             string subject = "Interview Schedule";
-            string message = $"<h1>Dear, {interview.Fullname}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
+            string message = $"<h1>Dear, {applicant.FirstName + " " + applicant.LastName}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
             //await SendEmailAsync(interview.ApplicantEmail, subject, message);
 
-            return Ok(interview);
+            return Ok();
         }
 
 
