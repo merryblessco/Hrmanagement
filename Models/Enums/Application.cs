@@ -55,12 +55,10 @@ namespace HRbackend.Models.Enums
     }
     public enum InterViewStatus
     {
-        [Description("scheduled")]
+        [Description("Scheduled")]
         scheduled = 1,
-        [Description("Interviewd")]
-        Completed
-      
-
+        [Description("Interviewed")]
+        Interviewed
     }
 
     public static class EnumExtensions

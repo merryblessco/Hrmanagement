@@ -270,7 +270,7 @@ namespace HRbackend.Controllers
 
         [HttpPost]
         [Route("send-invite")]
-        public async Task<IActionResult> SendInvites([FromBody] SendInvitationRequest interviewDto)
+        public async Task<IActionResult> SendInvite([FromBody] SendInvitationRequest interviewDto)
         {
 
             var applicant = await _dbContext.Applicants.FindAsync(interviewDto.ApplicantID);
@@ -302,7 +302,7 @@ namespace HRbackend.Controllers
             string message = $"<h1>Dear, {applicant.FirstName + " " + applicant.LastName}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
             //await SendEmailAsync(interview.ApplicantEmail, subject, message);
 
-            return Ok();
+            return Ok( new { message = "Invitation Sent." });
         }
 
 
@@ -375,6 +375,7 @@ namespace HRbackend.Controllers
                     MeetingNote = interview.MeetingNote,
                     Interviewers = interview.Interviewers,
                     JobID = interview.JobID,
+                    Status = interview.Status,  
                     StatusName = interview.Status.GetDescription()
                 };
 
