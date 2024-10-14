@@ -158,7 +158,7 @@ namespace HRbackend.Controllers
             }
 
             // Convert Resume file to byte array
-            byte[] resumeBytes;
+            byte[] resumeBytes;         
             using (var memoryStream = new MemoryStream())
             {
                 await employeeDto.Resume.CopyToAsync(memoryStream);

@@ -47,8 +47,8 @@ builder.Services.AddSwaggerGen(c =>
             new List<string>()
         }
     });
-    // Add this to prepend "Bearer " automatically
-    c.OperationFilter<SwaggerTokenFilter>();
+    //// Add this to prepend "Bearer " automatically
+    //c.OperationFilter<SwaggerTokenFilter>();
 });
 
 // Database configuration

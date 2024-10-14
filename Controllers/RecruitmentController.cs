@@ -62,7 +62,7 @@ namespace HRbackend.Controllers
         [HttpGet("getallJobs")]
         public async Task<ActionResult<IEnumerable<JobPostingResponseDto>>> GetAll()
         {
-            var jobPostings = new List<JobPostingResponseDto>();
+                var jobPostings = new List<JobPostingResponseDto>();
 
             var records = _dbContext.JobPostings.Include(x => x.Department).Where(x => !x.IsDeleted).Select(x => new JobPostingResponseDto
             {
