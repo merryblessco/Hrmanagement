@@ -1,9 +1,12 @@
 ﻿using Azure.Core;
 using HRbackend.Data;
+using HRbackend.Models;
+using HRbackend.Models.Auth;
 using HRbackend.Models.EmployeeModels;
 using HRbackend.Models.Entities.Employees;
-using LinkOrgNet.Models;
+using HRbackend.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -13,31 +16,34 @@ using System.Security.Claims;
 
 namespace HRbackend.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class EmployeesController : ControllerBase
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         private readonly string _smtpHost = "smtp.gmail.com";
         private readonly int _smtpPort = 587;
         private readonly string _senderEmail = "hrsolutionsdev@gmail.com";
         private readonly string _senderPassword = "P@$$4w0rld"; // Store this in a secure location, such as environment variables.
 
-        public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment)
+        public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment, UserManager<ApplicationUser> userManager)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _userManager = userManager;
         }
-        // GET: api/Employees
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
             return await _dbContext.Employees.ToListAsync();
         }
-        [HttpGet("Token")]
+
+        [HttpGet("employee-info")]
         public async Task<IActionResult> GetEmployeeInfo()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
@@ -49,110 +55,198 @@ namespace HRbackend.Controllers
             var userClaims = identity.Claims;
             var email = userClaims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrEmpty(email) )
+            if (string.IsNullOrEmpty(email))
             {
                 return BadRequest("Invalid employee Email ID in token");
             }
 
-            var employee = await _dbContext.Employees.FindAsync(email);
-            if (employee == null)
+            var employee = await _dbContext.Employees
+                .Where(x => x.Email == email && !x.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department)
+                .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (employee == null || contract == null)
             {
                 return NotFound("Employee not found");
             }
 
             var employeeInfo = new EmployeeDto
             {
-                FullName = employee.FullName,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
                 Email = employee.Email,
-                JobTitle = employee.JobTitle,
-                Department = employee.Department,
-                IsAdmin = employee.IsAdmin
-                // Add any other properties you want to include
+                JobTitle = contract.JobTitle,
+                Department = contract.Department.Name,
             };
 
             return Ok(employeeInfo);
         }
 
-        // GET: api/Employees/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Employee>> GetEmployee(int id)
+        public async Task<ActionResult<EmployeeDto>> GetEmployee(Guid id)
         {
-            var employee = await _dbContext.Employees.FindAsync(id);
-            if (employee == null) return NotFound();
-            return employee;
-        }
-        // POST: api/Employees
-        [HttpPost("createEmployee")]
+            var employee = await _dbContext.Employees
+               .Where(x => x.Id == id && !x.IsDeleted)
+               .FirstOrDefaultAsync();
 
+            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department)
+                .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (employee == null || contract == null) return NotFound();
+
+            var state = await _dbContext.States.Where(x => x.Id == employee.StateId).FirstOrDefaultAsync();
+            var lga = await _dbContext.LGAs.Where(x => x.Id == id).FirstOrDefaultAsync();
+
+            var employeeInfo = new EmployeeDto
+            {
+                // Personal Information
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                Email = employee.Email,
+                Role = employee.Role.GetDescription(),
+                PhoneNumber = employee.PhoneNumber,
+                Address = employee.Address,
+                State = state.Name,
+                Lga = lga.Name,
+                DOB = employee.DOB,
+                PassportBytes = employee.PassportBytes,
+                ResumeBytes = employee.ResumeBytes,
+
+                // Contract Information
+                JobTitle = contract.JobTitle,
+                DepartmentId = contract.DepartmentId,
+                Department = contract.Department.Name,
+                PositionId = contract.PositionId,
+                Position = contract.Position.Name,
+
+                HireDate = contract.HireDate,
+
+                // Manager Information
+                ManagerId = contract.Manager != null ? contract.Manager.Id : new Guid(),
+                ManagerName = contract.Manager != null ? $"{contract.Manager.FirstName} {contract.Manager.LastName}" : String.Empty
+            };
+
+            return employeeInfo;
+        }
+
+        [HttpPost("create-employee")]
         public async Task<IActionResult> CreateEmployee([FromForm] EmployeeDto employeeDto)
         {
-            if (employeeDto.Passport == null || employeeDto.PassporthFile == null)
+            if (employeeDto.Passport == null || employeeDto.Resume == null)
                 return BadRequest("Passport and Resume files are required.");
 
-            // Generate unique filenames and define paths
-            string uploadsFolder = _environment?.WebRootPath != null
-                ? Path.Combine(_environment.WebRootPath, "uploads")
-                : Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            // Handle Passport file
-            string passportFileName = await SaveFile(employeeDto.Passport, "Passports");
-
             // Validate file types (pdf, jpeg, word)
-            var allowedExtensions = new[] { ".pdf", ".jpeg", ".jpg", ".doc", ".docx" };
-            var fileExtension = Path.GetExtension(employeeDto.Passport.FileName).ToLower();
+            var allowedExtensions = new[] { ".pdf", ".jpeg", ".jpg", ".doc", ".docx", ".png" };
+            var passportFileExtension = Path.GetExtension(employeeDto.Passport.FileName).ToLower();
+            var resumeFileExtension = Path.GetExtension(employeeDto.Resume.FileName).ToLower();
 
-            if (!allowedExtensions.Contains(fileExtension))
+            if (!allowedExtensions.Contains(passportFileExtension) || !allowedExtensions.Contains(resumeFileExtension))
             {
-                return BadRequest("Only PDF, JPEG, and Word files are allowed.");
+                return BadRequest("Only PDF, JPEG, and Word files are allowed for Passport and Resume.");
             }
 
-            // Convert the file to a byte array
-            byte[] fileBytes;
+            // Convert Passport file to byte array
+            byte[] passportBytes;
             using (var memoryStream = new MemoryStream())
             {
                 await employeeDto.Passport.CopyToAsync(memoryStream);
-                fileBytes = memoryStream.ToArray();
+                passportBytes = memoryStream.ToArray();
             }
 
-            // Generate random password
-            Random randR = new Random();
-            int R = randR.Next(0000, 2222);
-            employeeDto.Password = "HR" + R.ToString();
-
-            // Create Employee object and map fields from DTO
-            var employee = new Employee
+            // Convert Resume file to byte array
+            byte[] resumeBytes;
+            using (var memoryStream = new MemoryStream())
             {
-                FullName = employeeDto.FullName,
+                await employeeDto.Resume.CopyToAsync(memoryStream);
+                resumeBytes = memoryStream.ToArray();
+            }
+
+            // Generate random password for the employee
+            string password = $"{employeeDto.FirstName.ToUpper()}pass@123";
+
+            // Create ApplicationUser (assuming Identity is being used)
+            var applicationUser = new ApplicationUser
+            {
+                UserName = employeeDto.Email,
+                FirstName = employeeDto.FirstName,
+                LastName = employeeDto.LastName,
                 Email = employeeDto.Email,
                 PhoneNumber = employeeDto.PhoneNumber,
-                Address = employeeDto.Address,
-                JobTitle = employeeDto.JobTitle,
-                Department = employeeDto.Department,
-                Position = employeeDto.Position,
-                State = employeeDto.State,
-                LGA = employeeDto.LGA,
-                HireDate = employeeDto.HireDate,
-                DOB = employeeDto.DOB,
-                ManagerID = employeeDto.ManagerID,
-                PassportPath = passportFileName,
-                PassporthFile = fileBytes,
-                LoginId = employeeDto.LoginId,
-                Password = SecurityClass.FCODE(employeeDto.Password)
+                Role = ApplicationRoles.Employee,
+                PasswordHash = _userManager.PasswordHasher.HashPassword(null, password) // Hash password
             };
 
-            // Save employee to the database
-            _dbContext.Employees.Add(employee);
+            var result = await _userManager.CreateAsync(applicationUser, password);
+
+
+            if (!result.Succeeded)
+            {
+
+                if (result.Errors?.FirstOrDefault().Code == "DuplicateUserName")
+                {
+                    return BadRequest(new { message = $"Employee with {employeeDto.Email} already exist." });
+                }
+                return BadRequest(new { message = "Failed to create user." });
+            }
+
+            // Assign role to user
+            await _userManager.AddToRoleAsync(applicationUser, ApplicationRoles.Employee.ToString());
+
+
+            var state = await _dbContext.States.Where(x => x.StateCode == employeeDto.StateCode).FirstOrDefaultAsync();
+            var lga = await _dbContext.LGAs.Where(x => x.Id == employeeDto.LGAId).FirstOrDefaultAsync();
+
+            if (lga == null || state == null)
+            {
+                return BadRequest(new { message = "State/Lga record not found" });
+            }
+
+            // Create Employee object
+            var employee = new Employee
+            {
+                FirstName = employeeDto.FirstName,
+                LastName = employeeDto.LastName,
+                Email = employeeDto.Email,
+                Role = ApplicationRoles.Employee,
+                PhoneNumber = employeeDto.PhoneNumber,
+                Address = employeeDto.Address,
+                StateId = state.Id,
+                LGAId = lga.Id,
+                DOB = employeeDto.DOB,
+                PassportBytes = passportBytes,
+                ResumeBytes = resumeBytes,
+            };
+
+            // Add employee to the database
+            await _dbContext.Employees.AddAsync(employee);
+
+            // Create EmployeeContract object
+            var employeeContract = new EmployeeContract
+            {
+                EmployeeId = employee.Id,
+                JobTitle = employeeDto.JobTitle != null ? employeeDto.JobTitle : String.Empty,
+                DepartmentId = employeeDto.DepartmentId,
+                PositionId = employeeDto.PositionId,
+                HireDate = employeeDto.HireDate,
+                ManagerId = employeeDto.ManagerId != null ? employeeDto.ManagerId : null,
+            };
+
+            // Add employee contract to the database
+            await _dbContext.EmployeeContracts.AddAsync(employeeContract);
+
             await _dbContext.SaveChangesAsync();
 
             // Send welcome email
             string subject = "Welcome to Tavai-Tech Solutions";
-            string message = $"<h1>Welcome, {employee.FullName}!</h1><p>We're excited to have you join our team.</p>";
-            await SendEmailAsync(employee.Email, subject, message);
+            string message = $"<h1>Welcome, {employee.FirstName} {employee.LastName}!</h1><p>Your account has been created successfully. Your login credentials are:</p>" +
+                             $"<p>Email: {employee.Email}</p><p>Password: {password}</p><p>Please change your password after the first login.</p>";
+            //await SendEmailAsync(employee.Email, subject, message);
 
-            return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeID }, employee);
+            return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, employee);
         }
 
         private async Task<string> SaveFile(IFormFile file, string subFolder)
@@ -163,7 +257,7 @@ namespace HRbackend.Controllers
                 Directory.CreateDirectory(uploadsFolder);
 
             string fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            string[] allowedExtensions = { ".pdf", ".doc", ".docx", ".jpg", ".jpeg" };
+            string[] allowedExtensions = { ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png" };
 
             if (!allowedExtensions.Contains(fileExtension))
                 throw new ArgumentException("Invalid file format. Only PDF, Word, and JPEG formats are allowed.");
@@ -178,113 +272,118 @@ namespace HRbackend.Controllers
 
             return Path.Combine(subFolder, uniqueFileName);
         }
-        [HttpPut("updateEmployee/{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, [FromForm] EmployeeDto employeeDto)
-        {
-            var employee = await _dbContext.Employees.FindAsync(id);
 
-            if (employee == null)
+        [HttpPut("updateEmployee/{id}")]
+        public async Task<IActionResult> UpdateEmployee(Guid id, [FromForm] EmployeeDto employeeDto)
+        {
+            // Fetch the employee from the database
+            var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == id);
+            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department)
+              .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
+              .FirstOrDefaultAsync();
+
+            if (employee == null || contract == null)
                 return NotFound("Employee not found");
 
-            // Generate unique filenames and define paths if new files are provided
-            string uploadsFolder = _environment?.WebRootPath != null ? Path.Combine(_environment.WebRootPath, "uploads") : Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            // Check if new Passport file is provided, if so, save it
+            // Validate and handle Passport file conversion to byte array
             if (employeeDto.Passport != null)
             {
-                string passportFileName = Guid.NewGuid().ToString() + "_" + employeeDto.Passport.FileName;
-                string passportFilePath = Path.Combine(uploadsFolder, passportFileName);
+                var allowedExtensions = new[] { ".jpeg", ".jpg", ".pdf" };
+                var passportFileExtension = Path.GetExtension(employeeDto.Passport.FileName).ToLower();
 
-                using (var passportStream = new FileStream(passportFilePath, FileMode.Create))
+                if (!allowedExtensions.Contains(passportFileExtension))
+                    return BadRequest("Only PDF, JPEG files are allowed for Passport.");
+
+                using (var memoryStream = new MemoryStream())
                 {
-                    await employeeDto.Passport.CopyToAsync(passportStream);
+                    await employeeDto.Passport.CopyToAsync(memoryStream);
+                    employee.PassportBytes = memoryStream.ToArray();
                 }
-
-                // Delete the old passport file if it exists
-                if (!string.IsNullOrEmpty(employee.PassportPath))
-                {
-                    string oldPassportPath = Path.Combine(uploadsFolder, employee.PassportPath);
-                    if (System.IO.File.Exists(oldPassportPath))
-                    {
-                        System.IO.File.Delete(oldPassportPath);
-                    }
-                }
-
-                employee.PassportPath = passportFileName;
             }
 
-            // Check if new Resume file is provided, if so, save it
-           /* if (employeeDto.Resume != null)
+            // Validate and handle Resume file conversion to byte array
+            if (employeeDto.Resume != null)
             {
-                string resumeFileName = Guid.NewGuid().ToString() + "_" + employeeDto.Resume.FileName;
-                string resumeFilePath = Path.Combine(uploadsFolder, resumeFileName);
+                var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
+                var resumeFileExtension = Path.GetExtension(employeeDto.Resume.FileName).ToLower();
 
-                using (var resumeStream = new FileStream(resumeFilePath, FileMode.Create))
+                if (!allowedExtensions.Contains(resumeFileExtension))
+                    return BadRequest("Only PDF, Word files are allowed for Resume.");
+
+                using (var memoryStream = new MemoryStream())
                 {
-                    await employeeDto.Resume.CopyToAsync(resumeStream);
+                    await employeeDto.Resume.CopyToAsync(memoryStream);
+                    employee.ResumeBytes = memoryStream.ToArray();
                 }
+            }
 
-                // Delete the old resume file if it exists
-                if (!string.IsNullOrEmpty(employee.ResumePath))
-                {
-                    string oldResumePath = Path.Combine(uploadsFolder, employee.ResumePath);
-                    if (System.IO.File.Exists(oldResumePath))
-                    {
-                        System.IO.File.Delete(oldResumePath);
-                    }
-                }
+            var state = await _dbContext.States.Where(x => x.StateCode == employeeDto.StateCode).FirstOrDefaultAsync();
+            var lga = await _dbContext.LGAs.Where(x => x.Id == employeeDto.LGAId).FirstOrDefaultAsync();
 
-                employee.ResumePath = resumeFileName;
-            }*/
+            if (lga == null || state == null)
+            {
+                return BadRequest(new { message = "State/Lga record not found" });
+            }
 
-            // Update other employee fields from DTO
-            employee.FullName = employeeDto.FullName;
+            // Update Employee fields from DTO
+            employee.FirstName = employeeDto.FirstName;
+            employee.LastName = employeeDto.LastName;
             employee.Email = employeeDto.Email;
             employee.PhoneNumber = employeeDto.PhoneNumber;
             employee.Address = employeeDto.Address;
-            employee.JobTitle = employeeDto.JobTitle;
-            employee.Department = employeeDto.Department;
-            employee.Position = employeeDto.Position;
-            employee.State = employeeDto.State;
-            employee.LGA = employeeDto.LGA;
-            employee.HireDate = employeeDto.HireDate;
+            employee.StateId = state.Id;
+            employee.LGAId = lga.Id;
             employee.DOB = employeeDto.DOB;
-            employee.ManagerID = employeeDto.ManagerID;
-            employee.LoginId = employeeDto.LoginId;
-            employee.Password = SecurityClass.FCODE(employeeDto.Password);
+            employee.Role = ApplicationRoles.Employee;
+
+
+            // Update EmployeeContract if applicable
+            if (contract != null)
+            {
+                contract.JobTitle = employeeDto.JobTitle;
+                contract.DepartmentId = employeeDto.DepartmentId;
+                contract.PositionId = employeeDto.PositionId;
+                contract.HireDate = employeeDto.HireDate;
+                contract.ManagerId = employeeDto.ManagerId;
+            }
+            else
+            {
+                // If the contract doesn't exist, create a new one
+                var employeeContract = new EmployeeContract
+                {
+                    EmployeeId = employee.Id,
+                    JobTitle = employeeDto.JobTitle,
+                    DepartmentId = employeeDto.DepartmentId,
+                    PositionId = employeeDto.PositionId,
+                    HireDate = employeeDto.HireDate,
+                    ManagerId = employeeDto.ManagerId
+                };
+                await _dbContext.EmployeeContracts.AddAsync(employeeContract);
+            }
 
             // Save changes to the database
             _dbContext.Employees.Update(employee);
             await _dbContext.SaveChangesAsync();
 
-            return Ok(new { employee.EmployeeID });
+            return Ok(new { employee.Id });
         }
 
-
-        // DELETE: api/Employees/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEmployee(int id)
+        public async Task<IActionResult> DeleteEmployee(Guid id)
         {
-            var employee = await _dbContext.Employees.FindAsync(id);
+            var employee = await _dbContext.Employees.Where(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
             if (employee == null) return NotFound();
 
-            // Delete associated files
-            DeleteFile(employee.PassportPath);
-            //DeleteFile(employee.ResumePath);
+            employee.IsDeleted = true;
 
-            _dbContext.Employees.Remove(employee);
             await _dbContext.SaveChangesAsync();
             return NoContent();
         }
 
-        private bool EmployeeExists(int id)
+        private bool EmployeeExists(Guid id)
         {
-            return _dbContext.Employees.Any(e => e.EmployeeID == id);
+            return _dbContext.Employees.Any(e => e.Id == id);
         }
-
 
         private void DeleteFile(string filePath)
         {

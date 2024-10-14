@@ -5,10 +5,9 @@ namespace HRbackend.Models.ApplicantsModel
 {
     public class InterviewDto
     {
-        public int JobID { get; set; }
-        [ForeignKey("ApplicantID")]
+        public Guid JobID { get; set; }
 
-        public int ApplicantID { get; set; }
+        public Guid ApplicantID { get; set; }
         public string ApplicantEmail { get; set; }
         public string ApplicatMobile { get; set; }
         public string MeetingLink { get; set; }
@@ -25,8 +24,8 @@ namespace HRbackend.Models.ApplicantsModel
 
     public class SendInvitationRequest
     {
-        public int JobID { get; set; }
-        public int ApplicantID { get; set; }
+        public Guid JobID { get; set; }
+        public Guid ApplicantID { get; set; }
         public string MeetingLink { get; set; }
         public string MeetingNote { get; set; }
         public List<string> Interviewers { get; set; }
@@ -34,9 +33,9 @@ namespace HRbackend.Models.ApplicantsModel
     }
 
     public class InterviewRequest { 
-        public int JobID { get; set; }
+        public Guid JobID { get; set; }
 
-        public int ApplicantID { get; set; }
+        public Guid ApplicantID { get; set; }
      
     }
 }

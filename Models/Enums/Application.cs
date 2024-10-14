@@ -61,6 +61,19 @@ namespace HRbackend.Models.Enums
         Interviewed
     }
 
+    public enum JobMode
+    {
+        FullTime = 1,
+        PartTime = 2,
+        Internship = 3
+    }
+    public enum WorkMode
+    {
+        Onsite = 1,
+        Remote = 2,
+        Hybrid = 3
+    }
+
     public static class EnumExtensions
     {
         public static string GetDescription(this Enum value)

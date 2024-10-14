@@ -3,15 +3,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HRbackend.Models.Entities.Employees
 {
-    public class EmployeeAssessment
+    public class EmployeeAssessment : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int AssessmentID { get; set; }
-        [ForeignKey("EmployeeID")]
-        public int EmployeeID { get; set; }
+        public Guid EmployeeID { get; set; }
         public DateTime AssessmentDate { get; set; }
         public string SelfEvaluation { get; set; }
         public string Goals { get; set; }
+        public Employee Employee { get; set; }
+
     }
 }

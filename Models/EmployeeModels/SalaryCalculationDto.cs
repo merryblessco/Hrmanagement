@@ -4,8 +4,7 @@ namespace HRbackend.Models.EmployeeModels
 {
     public class SalaryCalculationDto
     {
-        [ForeignKey("Employee")]
-        public int EmployeeId { get; set; }
+        public Guid EmployeeId { get; set; }
         public string Fullname { get; set; }
         public string AdjustmentType { get; set; }
         public decimal BasicSalary { get; set; }

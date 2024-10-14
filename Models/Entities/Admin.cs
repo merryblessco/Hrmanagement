@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRbackend.Models.Entities
 {
-    public class Admin
+    public class Admin : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
         public string Fullname { get; set; }
 
         [Required]
@@ -16,6 +13,5 @@ namespace HRbackend.Models.Entities
 
         [Required]
         public string PasswordHash { get; set; }
-        public DateTime CreatedDate { get; set; }
     }
 }

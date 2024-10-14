@@ -36,9 +36,9 @@ namespace HRbackend.Controllers
             return Ok(salaries2);
         }
         [HttpGet("getallSalariesby/{EmployeeId}")]
-        public async Task<ActionResult<IEnumerable<SalaryCalculation>>> GetSalariesByEmployeId(int EmployeeId)
+        public async Task<ActionResult<IEnumerable<SalaryCalculation>>> GetSalariesByEmployeId(Guid EmployeeId)
         {
-            var salaries = await _dbContext.SalaryCalculations.FirstOrDefaultAsync(o => o.EmployeeId == EmployeeId);
+            var salaries = await _dbContext.SalaryCalculations.FirstOrDefaultAsync(o => o.Id == EmployeeId);
 
             if (salaries == null)
             {
@@ -70,7 +70,7 @@ namespace HRbackend.Controllers
             return CreatedAtAction(nameof(CreateSalaryCalculation), new { id = salaryCalculation.EmployeeId }, salaryCalculation);
         }
         [HttpPut("UpdateSalaryBy/{EmployeeId}")]
-        public async Task<IActionResult> UpdateSalaryCalculation(int EmployeeId, [FromForm] SalaryCalculation salaryCalculation)
+        public async Task<IActionResult> UpdateSalaryCalculation(Guid EmployeeId, [FromForm] SalaryCalculation salaryCalculation)
         {
             var salary = await _dbContext.SalaryCalculations.FindAsync(EmployeeId);
             if (EmployeeId != salaryCalculation.EmployeeId)
@@ -117,10 +117,10 @@ namespace HRbackend.Controllers
             return Ok(payslip2);
         }
         [HttpGet("GetpaySlipsby/{EmployeeId}")]
-        public async Task<ActionResult<PaySlip>> GetPaySlip(int EmployeeId)
+        public async Task<ActionResult<PaySlip>> GetPaySlip(Guid EmployeeId)
         {
             var paySlip = await _dbContext.PaySlips
-                                            .FirstOrDefaultAsync(o => o.EmployeeId == EmployeeId);
+                                            .FirstOrDefaultAsync(o => o.Id == EmployeeId);
 
             if (paySlip == null)
             {
@@ -141,7 +141,7 @@ namespace HRbackend.Controllers
                 PayPeriod = paySlip.PayPeriod,
                 TotalEarnings = paySlip.TotalEarnings,
                 TotalDeductions = paySlip.TotalDeductions,
-                EmployeeId = paySlip.EmployeeId
+                EmployeeID = paySlip.EmployeeId
             };
 
 
@@ -152,14 +152,14 @@ namespace HRbackend.Controllers
         }
         // PUT: api/PaySlip/{id}
         [HttpPut("Update-Payslip-By/{EmployeeId}")]
-        public async Task<IActionResult> UpdatePaySlip(int EmployeeId, [FromForm] PaySlipDto paySlip)
+        public async Task<IActionResult> UpdatePaySlip(Guid EmployeeId, [FromForm] PaySlipDto paySlip)
         {
             var payslip = await _dbContext.PaySlips.FindAsync(EmployeeId);
             if (EmployeeId != paySlip.EmployeeId)
             {
                 return BadRequest();
             }
-            payslip.EmployeeId = paySlip.EmployeeId;
+            payslip.EmployeeID = paySlip.EmployeeId;
             payslip.PayPeriod = paySlip.PayPeriod;
             payslip.TotalEarnings = paySlip.TotalEarnings;
             payslip.TotalDeductions = paySlip.TotalDeductions;
@@ -198,9 +198,9 @@ namespace HRbackend.Controllers
             return NoContent();
         }
 
-        private bool PaySlipExists(int EmployeeId)
+        private bool PaySlipExists(Guid EmployeeId)
         {
-            return _dbContext.PaySlips.Any(e => e.PaySlipId == EmployeeId);
+            return _dbContext.PaySlips.Any(e => e.Id == EmployeeId);
         }
 
         // GET: api/BenefitAdministration
@@ -213,9 +213,9 @@ namespace HRbackend.Controllers
             return Ok(benefit2);
         }
         [HttpGet("AllBenefits-By/{EmployeeId}")]
-        public async Task<ActionResult<IEnumerable<BenefitAdministrationDto>>> GetBenefitAdministrationsById(int EmployeeId)
+        public async Task<ActionResult<IEnumerable<BenefitAdministrationDto>>> GetBenefitAdministrationsById(Guid EmployeeId)
         {
-            var salaries = await _dbContext.BenefitAdmin.FirstOrDefaultAsync(o => o.EmployeeId == EmployeeId);
+            var salaries = await _dbContext.BenefitAdmin.FirstOrDefaultAsync(o => o.Id == EmployeeId);
 
             if (salaries == null)
             {
@@ -231,25 +231,25 @@ namespace HRbackend.Controllers
             var bennefit = new BenefitAdministration
             {
                 EffectiveDate = benefitAdministration.EffectiveDate,
-                EmployeeId = benefitAdministration.EmployeeId,
-                BenefitType = (int) benefitAdministration.BenefitType,
+                EmployeeID = benefitAdministration.EmployeeID,
+                BenefitType = benefitAdministration.BenefitType,
                 BenefitAmount = benefitAdministration.BenefitAmount
                
             };
             _dbContext.Add(bennefit);
             await _dbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(CreateBenefitAdministration), new { id = benefitAdministration.EmployeeId }, benefitAdministration);
+            return CreatedAtAction(nameof(CreateBenefitAdministration), new { id = benefitAdministration.EmployeeID }, benefitAdministration);
         }
         [HttpPut("Update-Benefits-By{EmployeeId}")]
-        public async Task<IActionResult> UpdateBenefitAdministration(int EmployeeId, [FromForm] BenefitAdministrationDto benefitAdministration)
+        public async Task<IActionResult> UpdateBenefitAdministration(Guid EmployeeId, [FromForm] BenefitAdministrationDto benefitAdministration)
         {
             var benefit = await _dbContext.BenefitAdmin.FindAsync(EmployeeId);
-            if (EmployeeId != benefitAdministration.EmployeeId)
+            if (EmployeeId != benefitAdministration.EmployeeID)
             {
                 return BadRequest();
             }
-            benefit.EmployeeId = benefitAdministration.EmployeeId;
+            benefit.EmployeeID = benefitAdministration.EmployeeID;
             benefit.BenefitType = benefitAdministration.BenefitType;
             benefit.BenefitAmount = benefitAdministration.BenefitAmount;
             
@@ -274,13 +274,13 @@ namespace HRbackend.Controllers
 
             return NoContent();
         }
-        private bool BenefitAdministrationExists(int EmployeeId)
+        private bool BenefitAdministrationExists(Guid EmployeeId)
         {
-            return _dbContext.BenefitAdmin.Any(e => e.BenefitAdministrationId == EmployeeId);
+            return _dbContext.BenefitAdmin.Any(e => e.EmployeeID == EmployeeId);
         }
         // DELETE: api/BenefitAdministration/{id}
         [HttpDelete("Delete-benefit-By/{EmployeeId}")]
-        public async Task<IActionResult> DeleteBenefitAdministration(int EmployeeId)
+        public async Task<IActionResult> DeleteBenefitAdministration(Guid EmployeeId)
         {
             var benefitAdministration = await _dbContext.BenefitAdmin.FindAsync(EmployeeId);
             if (benefitAdministration == null)
@@ -304,7 +304,7 @@ namespace HRbackend.Controllers
         }
         // GET: api/TaxManagement/{id}
         [HttpGet("Get-Tax-By/{EmployeeId}")]
-        public async Task<ActionResult<TaxManagement>> GetTaxManagement(int EmployeeId)
+        public async Task<ActionResult<TaxManagement>> GetTaxManagement(Guid EmployeeId)
         {
             var tax = await _dbContext.Taxes.FirstOrDefaultAsync(o => o.EmployeeId == EmployeeId);
 
@@ -334,7 +334,7 @@ namespace HRbackend.Controllers
         }
         // PUT: api/TaxManagement/{id}
         [HttpPut("Update-Tax-By/{EmployeeId}")]
-        public async Task<IActionResult> UpdateTaxManagement(int EmployeeId, [FromForm] TaxManagement taxManagement)
+        public async Task<IActionResult> UpdateTaxManagement(Guid EmployeeId, [FromForm] TaxManagement taxManagement)
         {
 
             var tax = await _dbContext.Taxes.FindAsync(EmployeeId);
@@ -386,7 +386,7 @@ namespace HRbackend.Controllers
         }
 
         // Helper method to check if a TaxManagement record exists
-        private bool TaxManagementExists(int EmployeeId)
+        private bool TaxManagementExists(Guid EmployeeId)
         {
             return _dbContext.Taxes.Any(e => e.EmployeeId == EmployeeId);
         }

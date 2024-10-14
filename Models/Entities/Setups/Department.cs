@@ -3,13 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HRbackend.Models.Entities.Setups
 {
-    public class Department
+    public class Department : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int DepartmentId { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public string? Description { get; set; } = string.Empty;
     }
 }

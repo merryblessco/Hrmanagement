@@ -1,17 +1,12 @@
 ﻿using AutoMapper;
 using HRbackend.Data;
 using HRbackend.Models.EmployeeModels;
-using HRbackend.Models.Entities;
 using HRbackend.Models.Entities.Recruitment;
+using HRbackend.Models.Enums;
 using HRbackend.Models.RecruitmentModel;
-using LinkOrgNet.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 using System.Security.Claims;
-using System.Threading.Tasks;
 namespace HRbackend.Controllers
 {
     [Route("api/[controller]")]
@@ -28,61 +23,103 @@ namespace HRbackend.Controllers
             _mapper = mapper;
         }
         [HttpGet("info")]
-        public async Task<IActionResult> GetEmployeeInfo()
-        {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            if (identity == null)
-            {
-                return Unauthorized();
-            }
+        //public async Task<IActionResult> GetEmployeeInfo()
+        //{
+        //    var identity = HttpContext.User.Identity as ClaimsIdentity;
+        //    if (identity == null)
+        //    {
+        //        return Unauthorized();
+        //    }
 
-            var userClaims = identity.Claims;
-            var email = userClaims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        //    var userClaims = identity.Claims;
+        //    var email = userClaims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrEmpty(email))
-            {
-                return BadRequest("Invalid employee Email ID in token");
-            }
+        //    if (string.IsNullOrEmpty(email))
+        //    {
+        //        return BadRequest("Invalid employee Email ID in token");
+        //    }
 
-            var employee = await _dbContext.Employees.FindAsync(email);
-            if (employee == null)
-            {
-                return NotFound("Employee not found");
-            }
+        //    var employee = await _dbContext.Employees.FindAsync(email);
+        //    if (employee == null)
+        //    {
+        //        return NotFound("Employee not found");
+        //    }
 
-            var employeeInfo = new EmployeeDto
-            {
-                FullName = employee.FullName,
-                Email = employee.Email,
-                JobTitle = employee.JobTitle,
-                Department = employee.Department,
-                IsAdmin = employee.IsAdmin
-                // Add any other properties you want to include
-            };
+        //    var employeeInfo = new EmployeeDto
+        //    {
+        //        FullName = employee.FullName,
+        //        Email = employee.Email,
+        //        JobTitle = employee.JobTitle,
+        //        Department = employee.Department,
+        //        IsAdmin = employee.IsAdmin
+        //        // Add any other properties you want to include
+        //    };
 
-            return Ok(employeeInfo);
-        }
+        //    return Ok(employeeInfo);
+
+
+        //}
         [HttpGet("getallJobs")]
-        public async Task<ActionResult<IEnumerable<JobPostingDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<JobPostingResponseDto>>> GetAll()
         {
-            var jobPostings = await _dbContext.JobPostings.ToListAsync();
-            return Ok(_mapper.Map<IEnumerable<JobPostingDto>>(jobPostings));
+            var jobPostings = new List<JobPostingResponseDto>();
+
+            var records = _dbContext.JobPostings.Include(x => x.Department).Where(x => !x.IsDeleted).Select(x => new JobPostingResponseDto
+            {
+                Id = x.Id,
+                JobTitle = x.JobTitle,
+                DepartmentId = x.DepartmentId,
+                DepartmentName = x.Department.Name,
+                WorkModeName = x.WorkMode.GetDescription(),
+                JobModeName = x.JobMode.GetDescription(),
+                Description = x.Description,
+                PostingDate = x.PostingDate,
+                Status = x.Status,
+                CompanyAddress = x.CompanyAddress,
+                MaxSalaryRange = x.MaxSalaryRange,
+                MinSalaryRange = x.MinSalaryRange,
+                Benefits = x.Benefits,
+                Responsibilities = x.Responsibilities,
+                Qualifications = x.Qualifications,
+            }).AsQueryable();
+
+            jobPostings = await records.ToListAsync();
+
+            return Ok(jobPostings);
         }
 
-        //[HttpGet("{id}")]
         [HttpGet("getJob/{id}")]
-        public async Task<ActionResult<JobPostingDto>> GetById(int id)
+        public async Task<ActionResult<JobPostingResponseDto>> GetById(Guid id)
         {
-            var jobPosting = await _dbContext.JobPostings.FindAsync(id);
-            if (jobPosting == null) return NotFound("No Posting you Job search, pls try other Jobs");
-            return Ok(_mapper.Map<JobPostingDto>(jobPosting));
+            var record = await _dbContext.JobPostings.Include(x => x.Department).Where(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+            if (record == null) return NotFound("Job posting record not found");
+
+            var response = new JobPostingResponseDto
+            {
+                Id = record.Id,
+                JobTitle = record.JobTitle,
+                DepartmentId = record.DepartmentId,
+                DepartmentName = record.Department.Name,
+                WorkModeName = record.WorkMode.GetDescription(),
+                JobModeName = record.JobMode.GetDescription(),
+                Description = record.Description,
+                PostingDate = record.PostingDate,
+                Status = record.Status,
+                CompanyAddress = record.CompanyAddress,
+                MaxSalaryRange = record.MaxSalaryRange,
+                MinSalaryRange = record.MinSalaryRange,
+                Benefits = record.Benefits,
+                Responsibilities = record.Responsibilities,
+                Qualifications = record.Qualifications,
+            };
+          
+            return Ok(response);
         }
 
-        
+
         [HttpPost("PostJob")]
         public async Task<ActionResult<JobPostingDto>> Create([FromBody] JobPostingDto jobPostingDto)
         {
-            var jobPosting = _mapper.Map<JobPostings>(jobPostingDto);
             var postingDate = DateTime.Now;
             jobPostingDto.PostingDate = postingDate;
             Random randR = new Random();
@@ -90,15 +127,14 @@ namespace HRbackend.Controllers
             int R1 = randR.Next(0000, 4444);
 
             int add = R + R1;
-            jobPostingDto.JobCode = "JB" + add.ToString();
+            var JobCode = "JB" + add.ToString();
 
             var posting = new JobPostings
             {
-                
                 JobTitle = jobPostingDto.JobTitle,
-                JobCode = jobPostingDto.JobCode,
+                JobCode = JobCode,
                 CompanyAddress = jobPostingDto.CompanyAddress,
-                Department = jobPostingDto.Department,
+                DepartmentId = jobPostingDto.DepartmentId,
                 Description = jobPostingDto.Description,
                 PostingDate = jobPostingDto.PostingDate,
                 Status = jobPostingDto.Status,
@@ -114,20 +150,19 @@ namespace HRbackend.Controllers
             // Save employee to the database
             _dbContext.JobPostings.Add(posting);
             await _dbContext.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = posting.JobID }, posting);
+            return CreatedAtAction(nameof(GetById), new { id = posting.Id }, posting);
         }
 
         //[HttpPut("{id}")]
         [HttpPut("updateJobposting/{id}")]
-        public async Task<IActionResult> Update(int id, JobPostingDto jobPostingDto)
+        public async Task<IActionResult> Update(Guid id, JobPostingDto jobPostingDto)
         {
             var posting = await _dbContext.JobPostings.FindAsync(id);
-            if (id != jobPostingDto.JobID) return BadRequest();
-            posting.JobID = jobPostingDto.JobID;
+            if (id != jobPostingDto.Id) return BadRequest();
+            posting.Id = jobPostingDto.Id;
             posting.JobTitle = jobPostingDto.JobTitle;
-            posting.JobCode = jobPostingDto.JobCode;
             posting.CompanyAddress = jobPostingDto.CompanyAddress;
-            posting.Department = jobPostingDto.Department;
+            posting.DepartmentId = jobPostingDto.DepartmentId;
             posting.Description = jobPostingDto.Description;
             posting.PostingDate = jobPostingDto.PostingDate;
             posting.Status = jobPostingDto.Status;
@@ -141,7 +176,7 @@ namespace HRbackend.Controllers
 
             _dbContext.JobPostings.Add(posting);
             await _dbContext.SaveChangesAsync();
-            return Ok(new { posting.JobID });
+            return Ok(new { posting.Id });
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteJob(int id)
@@ -154,9 +189,9 @@ namespace HRbackend.Controllers
             return Ok("Job Successfuly Removed!");
         }
 
-        private bool JobExists(int id)
+        private bool JobExists(Guid id)
         {
-            return _dbContext.JobPostings.Any(e => e.JobID == id);
+            return _dbContext.JobPostings.Any(e => e.Id == id);
         }
     }
 }

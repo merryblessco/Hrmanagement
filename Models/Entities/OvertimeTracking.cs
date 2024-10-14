@@ -1,16 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using HRbackend.Models.Entities.Employees;
 
 namespace HRbackend.Models.Entities
 {
-    public class OvertimeTracking
+    public class OvertimeTracking : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int OvertimeID { get; set; }
-        [ForeignKey("EmployeeID")]
-        public int EmployeeID { get; set; }
+        public Guid EmployeeID { get; set; }
+
         public decimal OvertimeHours { get; set; }
         public string ApprovalStatus { get; set; } //(e.g., pending, approved)
+        public Employee Employee { get; set; }
+
     }
 }

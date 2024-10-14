@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
 using HRbackend.Data;
 using HRbackend.Models.ApplicantsModel;
+using HRbackend.Models.Auth;
 using HRbackend.Models.Entities.Recruitment;
 using HRbackend.Models.Enums;
 using HRbackend.Models.RecruitmentModel;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http;
@@ -13,15 +17,16 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace HRbackend.Controllers
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
-    public class ApplicantsController : ControllerBase
+    public class ApplicantsController : BaseController
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
         private readonly string _filePath = "";  // Set your file path here
-        public ApplicantsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper)
+        public ApplicantsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager) : base(userManager)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
@@ -48,7 +53,7 @@ namespace HRbackend.Controllers
         // GET: api/Applicants/{id}
         [HttpGet("{ApplicantID}")]
 
-        public async Task<IActionResult> GetApplicant(int ApplicantID)
+        public async Task<IActionResult> GetApplicant(Guid ApplicantID)
         {
             var applicant = await _dbContext.Applicants.FindAsync(ApplicantID);
 
@@ -63,7 +68,7 @@ namespace HRbackend.Controllers
             return Ok(applicant1);
         }
         [HttpGet("get-all-applicants-by-job-id/{JobId}")]
-        public async Task<IActionResult> GetApplicants(int JobId)
+        public async Task<IActionResult> GetApplicants(Guid JobId)
         {
             var applicants = await _dbContext.Applicants
                                              .Where(a => a.JobID == JobId)
@@ -126,7 +131,6 @@ namespace HRbackend.Controllers
                 JobID = request.JobID,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
-                Fullname = request.Fullname,
                 PhoneNumber = request.PhoneNumber,
                 Email = request.Email,
                 ResumeFilePath = fileName,
@@ -140,12 +144,12 @@ namespace HRbackend.Controllers
             _dbContext.Applicants.Add(applicant);
             await _dbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(CreateApplicant), new { id = applicant.ApplicantID }, applicant);
+            return CreatedAtAction(nameof(CreateApplicant), new { id = applicant.Id }, applicant);
         }
 
         // PUT: api/Applicants/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateApplicant(int id, [FromForm] ApplicantsDto request)
+        public async Task<IActionResult> UpdateApplicant(Guid id, [FromForm] ApplicantsDto request)
         {
             var applicant = await _dbContext.Applicants.FindAsync(id);
             if (applicant == null)
@@ -174,7 +178,7 @@ namespace HRbackend.Controllers
         }
         // DELETE: api/Applicants/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApplicant(int id)
+        public async Task<IActionResult> DeleteApplicant(Guid id)
         {
             var applicant = await _dbContext.Applicants.FindAsync(id);
             if (applicant == null)
@@ -280,6 +284,12 @@ namespace HRbackend.Controllers
                 return NotFound();
             }
 
+            var checkIfApplicationExist = await _dbContext.Interviews.Where(x => x.ApplicantID == applicant.Id && x.JobID == applicant.JobID && !x.IsDeleted).FirstOrDefaultAsync();
+            if (checkIfApplicationExist != null)
+            {
+                return Conflict(new { message = "Invitation Already Sent."});
+            }
+
             // Create Employee object and map fields from DTO
             var interview = new Interview
             {
@@ -302,7 +312,7 @@ namespace HRbackend.Controllers
             string message = $"<h1>Dear, {applicant.FirstName + " " + applicant.LastName}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
             //await SendEmailAsync(interview.ApplicantEmail, subject, message);
 
-            return Ok( new { message = "Invitation Sent." });
+            return Ok(new { message = "Invitation Sent." });
         }
 
 
@@ -322,7 +332,7 @@ namespace HRbackend.Controllers
             InterviewDto obj = new InterviewDto
             {
                 ApplicantEmail = interview.Applicant.Email,
-                ApplicantID = interview.Applicant.ApplicantID,
+                ApplicantID = interview.Applicant.Id,
                 ApplicatMobile = interview.Applicant.PhoneNumber,
                 Fullname = interview.Applicant.FirstName + " " + interview.Applicant.LastName,
                 InterviewDate = interview.Applicant.ApplicationDate,
@@ -339,7 +349,7 @@ namespace HRbackend.Controllers
 
         [HttpGet]
         [Route("invitations")]
-        public async Task<IActionResult> Invitations([FromQuery] int jobId)
+        public async Task<IActionResult> Invitations([FromQuery] Guid jobId)
         {
             var interviews = await _dbContext.Interviews.Include(x => x.Applicant)
                                                        .Where(x => x.JobID == jobId)
@@ -366,7 +376,7 @@ namespace HRbackend.Controllers
                 InterviewDto obj = new InterviewDto
                 {
                     ApplicantEmail = interview.Applicant.Email,
-                    ApplicantID = interview.Applicant.ApplicantID,
+                    ApplicantID = interview.Applicant.Id,
                     ApplicatMobile = interview.Applicant.PhoneNumber,
                     Fullname = interview.Applicant.FirstName + " " + interview.Applicant.LastName,
                     InterviewDate = interview.Applicant.ApplicationDate,
@@ -375,7 +385,7 @@ namespace HRbackend.Controllers
                     MeetingNote = interview.MeetingNote,
                     Interviewers = interview.Interviewers,
                     JobID = interview.JobID,
-                    Status = interview.Status,  
+                    Status = interview.Status,
                     StatusName = interview.Status.GetDescription()
                 };
 

@@ -4,6 +4,9 @@ using HRbackend.Models.EmployeeModels;
 using HRbackend.Models.Entities.Employees;
 using HRbackend.Models.Entities.PayRoll;
 using HRbackend.Models.Entities.Recruitment;
+using HRbackend.Models.Entities.Setups;
+using HRbackend.Models.RecruitmentModel;
+using HRbackend.Models.SetupModels;
 
 namespace HRbackend.Models.Helper
 {
@@ -18,6 +21,12 @@ namespace HRbackend.Models.Helper
             CreateMap<PaySlip, PaySlipDto>();
             CreateMap<BenefitAdministration, BenefitAdministrationDto>();
             CreateMap<TaxManagement, TaxManagementDto>();
+            CreateMap<JobPostings, JobPostingDto>();
+            CreateMap<JobPostings, JobPostingResponseDto>();
+
+            CreateMap<LGA, LGADto>();
+            CreateMap<State, StateDto>();
+
 
         }
     }

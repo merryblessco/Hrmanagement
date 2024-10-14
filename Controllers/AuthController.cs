@@ -1,16 +1,13 @@
-﻿using AutoMapper;
-using HRbackend.Data;
-using HRbackend.Models.Auth;
-using HRbackend.Models.EmployeeModels;
-using HRbackend.Models.Entities.Employees;
-using HRbackend.Models.LoginDto;
-using LinkOrgNet.Models;
-using Microsoft.AspNetCore.Http;
+﻿using HRbackend.Models.Auth;
+using HRbackend.Models.Enums;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace HRbackend.Controllers
@@ -19,180 +16,216 @@ namespace HRbackend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly IWebHostEnvironment _environment;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
-        private readonly IMapper _mapper;
-        public AuthController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IConfiguration configuration, IMapper mapper)
+
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
         {
-            _environment = environment ?? throw new ArgumentNullException(nameof(environment));
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _mapper = mapper;
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _configuration = configuration;
+        }
+
+        //[Authorize(Roles = "Administrator, HrManager")]
+        [HttpPost("signup")]
+        public async Task<IActionResult> Signup([FromBody] RegisterDto model)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Role = ApplicationRoles.HrManager // Use HrApplicationRoles from enum
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            // Assign role to user
+            await _userManager.AddToRoleAsync(user, ApplicationRoles.HrManager.ToString());
+
+            return Ok("User created successfully");
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Email == model.Email);
-
-            //if (employee == null || SecurityClass.FCODE(model.Password))
-            //{
-            //    return Unauthorized("Invalid email or password");
-            //}
-
-            var mappedEmployee = _mapper.Map<EmployeeDto>(employee);
-            var token = GenerateJwtToken(employee, "access");
-            var accessToken = GenerateJwtToken(employee, "access");
-            var refreshToken = GenerateJwtToken(employee, "refresh");
-
-            var res = new LoginResponseDto()
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
             {
-                User = mappedEmployee,
-                Token = token,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
-
-            return Ok(res);
-        }
-        [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto model)
-        {
-            var principal = GetPrincipalFromExpiredToken(model.RefreshToken);
-            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
-
-            var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Email == email);
-
-            if (employee == null)
-            {
-                return BadRequest("Invalid refresh token");
+                return Unauthorized("Invalid credentials");
             }
 
-            var newAccessToken = GenerateJwtToken(employee, "access");
-            var newRefreshToken = GenerateJwtToken(employee, "refresh");
+            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+            if (!result.Succeeded)
+            {
+                return Unauthorized("Invalid credentials");
+            }
 
-            return Ok(new { AccessToken = newAccessToken, RefreshToken = newRefreshToken });
+            // Generate JWT access token
+            var token = GenerateJwtToken(user);
+
+            // Generate refresh token
+            var refreshToken = GenerateRefreshToken();
+
+            // Optionally, store the refresh token in the user object (if using DB storage)
+            user.RefreshToken = refreshToken.Token;
+            user.RefreshTokenExpiryTime = refreshToken.Expires;
+            await _userManager.UpdateAsync(user);
+
+            // Return user details, access token, and refresh token
+            return Ok(new
+            {
+                Token = token,
+                RefreshToken = refreshToken.Token,
+                User = new
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = user.Role.GetDescription(),
+                    InitialSetup = user.InitialSetup,
+                }
+            });
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
         {
-            var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Email == model.Email);
-
-            if (employee == null)
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
             {
                 return BadRequest("Invalid email");
             }
 
-            // Generate a password reset token
-            var resetToken = GenerateJwtToken(employee, "reset");
-
-            // In a real-world scenario, you would send this token to the user's email
-            // For this example, we'll just return it
-            return Ok(new { ResetToken = resetToken });
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            // In production, send this token via email to the user
+            return Ok(new { Token = token });
         }
 
         [HttpPost("confirm-reset-password")]
         public async Task<IActionResult> ConfirmResetPassword([FromBody] ConfirmResetPasswordDto model)
         {
-            var principal = GetPrincipalFromExpiredToken(model.ResetToken);
-            var email = principal.FindFirst(ClaimTypes.Email)?.Value;
-
-            var employee = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Email == email);
-
-            if (employee == null)
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
             {
-                return BadRequest("Invalid reset token");
+                return BadRequest("Invalid email");
             }
 
-            employee.Password = SecurityClass.FCODE(model.NewPassword);
-            await _dbContext.SaveChangesAsync();
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
 
             return Ok("Password reset successfully");
         }
-        private string GenerateJwtToken(Employee employee, string tokenType)
-        {
-            var jwtKey = _configuration["Jwt:Key"];
-            var jwtIssuer = _configuration["Jwt:Issuer"];
-            var jwtAudience = _configuration["Jwt:Audience"];
 
-            if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto tokenRequest)
+        {
+            // Validate the access token and refresh token
+            var principal = GetPrincipalFromExpiredToken(tokenRequest.AccessToken);
+            if (principal == null)
             {
-                throw new InvalidOperationException("JWT configuration is incomplete. Please check your appsettings.json file.");
+                return BadRequest("Invalid access token or refresh token");
             }
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            var userEmail = principal.FindFirst(ClaimTypes.Email)?.Value;
+            var user = await _userManager.FindByEmailAsync(userEmail);
+            if (user == null || user.RefreshToken != tokenRequest.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             {
-                new Claim(JwtRegisteredClaimNames.Sub, employee.EmployeeID.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, employee.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("token_type", tokenType)
-            };
+                return BadRequest("Invalid refresh token or refresh token expired");
+            }
 
-            var expirationTime = tokenType switch
+            // Generate new tokens
+            var newAccessToken = GenerateJwtToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+
+            // Update user's refresh token
+            user.RefreshToken = newRefreshToken.Token;
+            user.RefreshTokenExpiryTime = newRefreshToken.Expires;
+            await _userManager.UpdateAsync(user);
+
+            // Return the new tokens
+            return Ok(new
             {
-                "access" => DateTime.Now.AddMinutes(15),
-                "refresh" => DateTime.Now.AddDays(7),
-                "reset" => DateTime.Now.AddHours(1),
-                _ => throw new ArgumentException("Invalid token type")
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: jwtIssuer,
-                audience: jwtAudience,
-                claims: claims,
-                expires: expirationTime,
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                Token = newAccessToken,
+                RefreshToken = newRefreshToken.Token
+            });
         }
 
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenValidationParameters = new TokenValidationParameters
             {
-                ValidateAudience = false,
-                ValidateIssuer = false,
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = false, // Here we are checking expired tokens
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
-                ValidateLifetime = false
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]))
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+                var jwtSecurityToken = securityToken as JwtSecurityToken;
+                if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    throw new SecurityTokenException("Invalid token");
+                }
 
-            return principal;
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
         }
-    }
-    /*private string GenerateJwtToken(Employee employee)
-    {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        private string GenerateJwtToken(ApplicationUser user)
         {
-            new Claim(JwtRegisteredClaimNames.Sub, employee.EmployeeID.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, employee.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddHours(3),
-            signingCredentials: credentials
-        );
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }*/
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(15),
+                signingCredentials: creds);
 
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Expires = DateTime.UtcNow.AddDays(7), // Set refresh token expiration (e.g., 7 days)
+                Created = DateTime.UtcNow,
+                CreatedByIp = HttpContext.Connection.RemoteIpAddress?.ToString()
+            };
+
+            return refreshToken;
+        }
+
+    }
 }
-

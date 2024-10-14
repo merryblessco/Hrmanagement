@@ -6,9 +6,9 @@ namespace HRbackend.Models.ApplicantsModel
 {
     public class ApplicantsDto
     {
-        public int ApplicantID { get; set; }
+        public Guid Id { get; set; }
 
-        public int JobID { get; set; }
+        public Guid JobID { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         //public string Fullname { get; set; }

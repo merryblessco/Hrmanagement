@@ -4,16 +4,12 @@ using HRbackend.Models.Enums;
 
 namespace HRbackend.Models.Entities.Recruitment
 {
-    public class Applicants
+    public class Applicants : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ApplicantID { get; set; }
-        [ForeignKey("JobID")]
-        public int JobID { get; set; }
+        public Guid JobID { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string Fullname { get; set; }
+        public string Fullname => $"{FirstName} {LastName}";
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public string ResumeFilePath { get; set; }

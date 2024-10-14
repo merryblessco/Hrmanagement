@@ -5,8 +5,8 @@ namespace HRbackend.Models.EmployeeModels
 {
     public class OnboardingDto
     {
-        [ForeignKey("EmployeeID")]
-        public int EmployeeID { get; set; }
+       
+        public Guid EmployeeID { get; set; }
         public DateTime ResumptionDate { get; set; }
         //public string OnboardingDocumentFilePath { get; set; }
         public int? OfferLetterStatus { get; set; } // e.g., Sent, Accepted

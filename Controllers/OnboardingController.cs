@@ -41,7 +41,7 @@ namespace HRbackend.Controllers
         }
         // GET: api/onboarding/{id}
         [HttpGet("getallOnboardedBy/{EmployeeID}")]
-        public async Task<ActionResult<Onboarding>> GetOnboarding(int EmployeeID)
+        public async Task<ActionResult<Onboarding>> GetOnboarding(Guid EmployeeID)
         {
             var onboarding = await _dbContext.Onboardings
                                              .FirstOrDefaultAsync(o => o.EmployeeID == EmployeeID);

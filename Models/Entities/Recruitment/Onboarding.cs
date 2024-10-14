@@ -4,13 +4,10 @@ using HRbackend.Models.Entities.Employees;
 
 namespace HRbackend.Models.Entities.Recruitment
 {
-    public class Onboarding
+    public class Onboarding : BaseEntity
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int OnboardingID { get; set; }
-        [ForeignKey("EmployeeID")]
-        public int EmployeeID { get; set; }
+        public Guid EmployeeID { get; set; }
+
         public DateTime ResumptionDate { get; set; }
 
         public int OfferLetterStatus { get; set; } // e.g., Sent, Accepted
@@ -19,6 +16,7 @@ namespace HRbackend.Models.Entities.Recruitment
         public int EquipmentStatus { get; set; } // e.g., Prepared, In-progress
        
         public DateTime CreatedDate { get; set; }
+        public Employee Employee { get; set; }
 
     }
 }
