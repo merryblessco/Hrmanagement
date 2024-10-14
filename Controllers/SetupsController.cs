@@ -24,7 +24,9 @@ public class SetupsController : BaseController
     private readonly IWebHostEnvironment _environment;
     private readonly IMapper _mapper;
     private readonly string _filePath = "";  // Set your file path here
-    public SetupsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager) : base(userManager)
+    private readonly IHttpContextAccessor _contextAccessor;
+    public SetupsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor) : base(userManager, contextAccessor)
+
     {
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
@@ -248,6 +250,24 @@ public class SetupsController : BaseController
         _dbContext.SaveChanges();
 
         return Ok(new { message = "Setup completed successfully." });
+    }
+
+    [HttpGet("summary")]
+    public async Task<ActionResult<SummaryDto>> GetSummary()
+    {
+        // Query the count of departments and employees asynchronously
+        int departmentCount = await _dbContext.Departments.Where(x => !x.IsDeleted).CountAsync();
+        int employeeCount = await _dbContext.Employees.Where(x => !x.IsDeleted).CountAsync();
+
+        var response = new SummaryDto
+        {
+            DepartmentCount = departmentCount,
+            EmployeeCount = employeeCount,
+            TotalExpense = 0
+        };
+
+        // Return the response
+        return Ok(response);
     }
 
     private bool DepartmentExists(Guid id)

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using HRbackend.Models.Auth;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace HRbackend.Controllers
 {
@@ -11,16 +12,39 @@ namespace HRbackend.Controllers
     public class BaseController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-        public BaseController(UserManager<ApplicationUser> userManager)
+        public BaseController(UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor)
         {
             _userManager = userManager;
+            _contextAccessor = contextAccessor;
+        }
+
+        protected async Task<Guid> GetCurrentUserId()
+        {
+            // Retrieve the user ID from the claims using "sub" (subject) claim
+            var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Ensure userId is not null or empty before parsing
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new InvalidOperationException("User ID not found in claims.");
+            }
+
+            // Parse the userId to a Guid and return
+            return Guid.Parse(userId);
         }
 
         // Utility function to retrieve the current signed-in user
         protected async Task<ApplicationUser> GetCurrentUserAsync()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            // Log claims for debugging
+            var claims = User.Claims.Select(c => new { c.Type, c.Value });
+            // You can log these claims to console or a logging framework
+            Console.WriteLine($"Claims: {string.Join(", ", claims)}");
+
             if (userId == null)
             {
                 return null;

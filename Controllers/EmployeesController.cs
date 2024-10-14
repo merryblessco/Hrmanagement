@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -19,52 +20,74 @@ namespace HRbackend.Controllers
     //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployeesController : ControllerBase
+    public class EmployeesController : BaseController
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHttpContextAccessor _contextAccessor;
 
         private readonly string _smtpHost = "smtp.gmail.com";
         private readonly int _smtpPort = 587;
         private readonly string _senderEmail = "hrsolutionsdev@gmail.com";
         private readonly string _senderPassword = "P@$$4w0rld"; // Store this in a secure location, such as environment variables.
 
-        public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment, UserManager<ApplicationUser> userManager)
+        public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor) : base(userManager, contextAccessor)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _userManager = userManager;
+            _contextAccessor = contextAccessor;
+            _contextAccessor = contextAccessor;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
+        public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployees()
         {
-            return await _dbContext.Employees.ToListAsync();
+
+            var result = new List<EmployeeDto>();
+            var employees = await _dbContext.Employees.Where(x => !x.IsDeleted).ToListAsync();
+
+            if (employees.Any())
+            {
+                foreach (var employee in employees)
+                {
+                    var contract = await _dbContext.EmployeeContracts.Include(y => y.Department).Include(y => y.Position)
+                   .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
+                   .FirstOrDefaultAsync();
+
+                    var employeeInfo = new EmployeeDto
+                    {
+                        Id = employee.Id,
+                        FirstName = employee.FirstName,
+                        LastName = employee.LastName,
+                        Email = employee.Email,
+                        PhoneNumber = employee.PhoneNumber,
+                        JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.JobTitle : contract.Position.Name,
+                        Department = contract.Department.Name,
+                        Position = contract.Position.Name,
+                        DOB = employee.DOB,
+                        Address = employee.Address,
+                        HireDate = contract.HireDate
+                    };
+
+                    result.Add(employeeInfo);
+                }
+            }
+
+            return Ok(result);
         }
 
         [HttpGet("employee-info")]
         public async Task<IActionResult> GetEmployeeInfo()
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            if (identity == null)
-            {
-                return Unauthorized();
-            }
-
-            var userClaims = identity.Claims;
-            var email = userClaims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(email))
-            {
-                return BadRequest("Invalid employee Email ID in token");
-            }
+            var user = await GetCurrentUserId();
 
             var employee = await _dbContext.Employees
-                .Where(x => x.Email == email && !x.IsDeleted)
+                .Where(x => x.Id == user && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
-            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department)
+            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department).Include(y => y.Position)
                 .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
@@ -75,11 +98,17 @@ namespace HRbackend.Controllers
 
             var employeeInfo = new EmployeeDto
             {
+                Id = employee.Id,
                 FirstName = employee.FirstName,
                 LastName = employee.LastName,
                 Email = employee.Email,
-                JobTitle = contract.JobTitle,
+                PhoneNumber = employee.PhoneNumber,
+                JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.JobTitle : contract.Position.Name,
                 Department = contract.Department.Name,
+                Position = contract.Position.Name,
+                DOB = employee.DOB,
+                Address = employee.Address,
+                HireDate = contract.HireDate
             };
 
             return Ok(employeeInfo);
@@ -158,7 +187,7 @@ namespace HRbackend.Controllers
             }
 
             // Convert Resume file to byte array
-            byte[] resumeBytes;         
+            byte[] resumeBytes;
             using (var memoryStream = new MemoryStream())
             {
                 await employeeDto.Resume.CopyToAsync(memoryStream);

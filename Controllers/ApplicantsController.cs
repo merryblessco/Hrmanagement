@@ -26,19 +26,14 @@ namespace HRbackend.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
         private readonly string _filePath = "";  // Set your file path here
-        public ApplicantsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager) : base(userManager)
+        private readonly IHttpContextAccessor _contextAccessor;
+        public ApplicantsController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor) : base(userManager, contextAccessor)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _mapper = mapper;
         }
-        // GET: api/Applicants
-        //[HttpGet]
-        //public async Task<IActionResult> GetApplicants()
-        //{
-        //    var applicants = await _dbContext.Applicants.ToListAsync();
-        //    return Ok(applicants);
-        //}
+      
         [HttpGet("getallApplicants")]
         public async Task<ActionResult<IEnumerable<ApplicantsDto>>> GetAll()
         {
@@ -50,9 +45,8 @@ namespace HRbackend.Controllers
             }
             return Ok(applications2);
         }
-        // GET: api/Applicants/{id}
+      
         [HttpGet("{ApplicantID}")]
-
         public async Task<IActionResult> GetApplicant(Guid ApplicantID)
         {
             var applicant = await _dbContext.Applicants.FindAsync(ApplicantID);
@@ -67,6 +61,7 @@ namespace HRbackend.Controllers
 
             return Ok(applicant1);
         }
+        
         [HttpGet("get-all-applicants-by-job-id/{JobId}")]
         public async Task<IActionResult> GetApplicants(Guid JobId)
         {
@@ -87,7 +82,7 @@ namespace HRbackend.Controllers
             return Ok(applications2);
         }
 
-        // POST: api/Applicants
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreateApplicant([FromForm] ApplicantsDto request)
         {
@@ -147,7 +142,6 @@ namespace HRbackend.Controllers
             return CreatedAtAction(nameof(CreateApplicant), new { id = applicant.Id }, applicant);
         }
 
-        // PUT: api/Applicants/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateApplicant(Guid id, [FromForm] ApplicantsDto request)
         {
@@ -176,7 +170,7 @@ namespace HRbackend.Controllers
 
             return NoContent();
         }
-        // DELETE: api/Applicants/{id}
+      
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteApplicant(Guid id)
         {
@@ -192,7 +186,6 @@ namespace HRbackend.Controllers
             return NoContent();
         }
 
-        // Save Resume File (PDF/Word)
         private async Task<string> SaveResumeFile(IFormFile file)
         {
             // Ensure the file is valid
@@ -229,8 +222,6 @@ namespace HRbackend.Controllers
             // Return the saved file name (not the full path)
             return fileName;
         }
-
-
 
         [HttpGet("download-file")]
         public IActionResult DownloadFile()
@@ -287,7 +278,7 @@ namespace HRbackend.Controllers
             var checkIfApplicationExist = await _dbContext.Interviews.Where(x => x.ApplicantID == applicant.Id && x.JobID == applicant.JobID && !x.IsDeleted).FirstOrDefaultAsync();
             if (checkIfApplicationExist != null)
             {
-                return Conflict(new { message = "Invitation Already Sent."});
+                return Conflict(new { message = "Invitation Already Sent." });
             }
 
             // Create Employee object and map fields from DTO
@@ -314,7 +305,6 @@ namespace HRbackend.Controllers
 
             return Ok(new { message = "Invitation Sent." });
         }
-
 
         [HttpPost]
         [Route("invitation")]
