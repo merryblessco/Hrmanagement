@@ -39,8 +39,8 @@ namespace HRbackend.Models.EmployeeModels
         public Guid? ManagerId { get; set; }
         [Obsolete]
         public string? ManagerName { get; set; }
-        [Obsolete]
-        public string? Role { get; set; }
+        //[Obsolete]
+        //public string? Role { get; set; }
 
     }
 }

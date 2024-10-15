@@ -5,6 +5,7 @@ using HRbackend.Models.Auth;
 using HRbackend.Models.EmployeeModels;
 using HRbackend.Models.Entities.Employees;
 using HRbackend.Models.Enums;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,7 @@ using System.Security.Claims;
 
 namespace HRbackend.Controllers
 {
-    //[Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
     public class EmployeesController : BaseController
@@ -37,7 +38,6 @@ namespace HRbackend.Controllers
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _userManager = userManager;
-            _contextAccessor = contextAccessor;
             _contextAccessor = contextAccessor;
         }
 
@@ -81,16 +81,18 @@ namespace HRbackend.Controllers
         [HttpGet("employee-info")]
         public async Task<IActionResult> GetEmployeeInfo()
         {
-            var user = await GetCurrentUserId();
+            var user = await GetCurrentUserAsync();
 
-            var employee = await _dbContext.Employees
-                .Where(x => x.Id == user && !x.IsDeleted)
+            var employee = await _dbContext.Employees.Include(x => x.State)
+                .Include(x => x.Lga)
+                .Where(x => x.Email == user.Email && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
-            var contract = await _dbContext.EmployeeContracts.Include(y => y.Department).Include(y => y.Position)
+            var contract = await _dbContext.EmployeeContracts.Include(x => x.Manager).Include(y => y.Department).Include(y => y.Position)
                 .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
+          
             if (employee == null || contract == null)
             {
                 return NotFound("Employee not found");
@@ -103,12 +105,19 @@ namespace HRbackend.Controllers
                 LastName = employee.LastName,
                 Email = employee.Email,
                 PhoneNumber = employee.PhoneNumber,
-                JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.JobTitle : contract.Position.Name,
+                JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.Position.Name : contract.JobTitle,
                 Department = contract.Department.Name,
                 Position = contract.Position.Name,
                 DOB = employee.DOB,
                 Address = employee.Address,
-                HireDate = contract.HireDate
+                HireDate = contract.HireDate,
+                Lga = employee.Lga.Name,
+                State = employee.State.Name,
+              
+                ManagerId = contract.Manager != null ?  contract.ManagerId : null,
+                ManagerName = contract.Manager != null ? contract.Manager.FirstName + " " + contract.Manager.LastName : null,
+                PassportBytes = employee.PassportBytes,
+                ResumeBytes = employee.ResumeBytes,
             };
 
             return Ok(employeeInfo);
@@ -136,7 +145,7 @@ namespace HRbackend.Controllers
                 FirstName = employee.FirstName,
                 LastName = employee.LastName,
                 Email = employee.Email,
-                Role = employee.Role.GetDescription(),
+                //Role = employee.Role.GetDescription(),
                 PhoneNumber = employee.PhoneNumber,
                 Address = employee.Address,
                 State = state.Name,
