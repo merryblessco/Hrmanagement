@@ -20,11 +20,10 @@ namespace HRbackend.Controllers
             _contextAccessor = contextAccessor;
         }
 
-
-         protected async Task<Guid> GetCurrentUserId()
-         {
-             // Retrieve the user ID from the claims using "sub" (subject) claim
-             var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        protected async Task<Guid> GetCurrentUserId()
+        {
+            // Retrieve the user ID from the claims using "sub" (subject) claim
+            var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
              // Ensure userId is not null or empty before parsing
              if (string.IsNullOrEmpty(userId))
@@ -36,15 +35,13 @@ namespace HRbackend.Controllers
              return Guid.Parse(userId);
          }
 
-        // Utility function to retrieve the current signed-in user
         protected async Task<ApplicationUser> GetCurrentUserAsync()
         {
-            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             // Log claims for debugging
             var claims = User.Claims.Select(c => new { c.Type, c.Value });
-            // You can log these claims to console or a logging framework
-            Console.WriteLine($"Claims: {string.Join(", ", claims)}");
+         
 
             if (userId == null)
             {
