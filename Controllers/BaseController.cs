@@ -20,20 +20,21 @@ namespace HRbackend.Controllers
             _contextAccessor = contextAccessor;
         }
 
-        protected async Task<Guid> GetCurrentUserId()
-        {
-            // Retrieve the user ID from the claims using "sub" (subject) claim
-            var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Ensure userId is not null or empty before parsing
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new InvalidOperationException("User ID not found in claims.");
-            }
+         protected async Task<Guid> GetCurrentUserId()
+         {
+             // Retrieve the user ID from the claims using "sub" (subject) claim
+             var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Parse the userId to a Guid and return
-            return Guid.Parse(userId);
-        }
+             // Ensure userId is not null or empty before parsing
+             if (string.IsNullOrEmpty(userId))
+             {
+                 throw new InvalidOperationException("User ID not found in claims.");
+             }
+
+             // Parse the userId to a Guid and return
+             return Guid.Parse(userId);
+         }
 
         // Utility function to retrieve the current signed-in user
         protected async Task<ApplicationUser> GetCurrentUserAsync()
