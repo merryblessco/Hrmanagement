@@ -61,6 +61,15 @@ namespace HRbackend.Models.Enums
         Interviewed
     }
 
+    public enum EmployeeStatus
+    {
+        [Description("Active")]
+        Active = 1,  // Employee is currently active and working.
+
+        [Description("Inactive")]
+        Inactive,    // Employee is not currently working (e.g., on leave, terminated).
+    }
+
     public enum JobMode
     {
         FullTime = 1,

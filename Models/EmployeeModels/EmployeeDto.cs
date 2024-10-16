@@ -11,6 +11,9 @@ namespace HRbackend.Models.EmployeeModels
         public string LastName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
+        [Obsolete]
+        public string? EmployeeNumber { get; set; }
+
         public string Address { get; set; }
         public string StateCode { get; set; }
         public Guid LGAId { get; set; }

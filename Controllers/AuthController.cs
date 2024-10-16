@@ -225,57 +225,6 @@ namespace HRbackend.Controllers
             };
         }
 
-        //    private string GenerateJwtToken(ApplicationUser user)
-        //    {
-        //        // Validate configuration settings
-        //        var jwtKey = _configuration["Jwt:Key"];
-        //        var jwtIssuer = _configuration["Jwt:Issuer"];
-        //        var jwtAudience = _configuration["Jwt:Audience"];
-        //        var expireMinutes = _configuration["Jwt:ExpireMinutes"];
-
-        //        if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) ||
-        //            string.IsNullOrEmpty(jwtAudience) || string.IsNullOrEmpty(expireMinutes))
-        //        {
-        //            throw new InvalidOperationException("JWT configuration is not set properly.");
-        //        }
-
-        //        var claims = new[]
-        //        {
-        //            new Claim(ClaimTypes.NameIdentifier, user.Id),
-        //    new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-        //    new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        //    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        //    // Optionally add roles or other claims if necessary
-        //};
-
-        //        var tokenDescriptor = new SecurityTokenDescriptor
-        //        {
-        //            Subject = new ClaimsIdentity(claims),
-        //            Expires = DateTime.UtcNow.AddHours(1),
-        //            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")), SecurityAlgorithms.HmacSha256Signature)
-        //        };
-
-        //        var tokenHandler = new JwtSecurityTokenHandler();
-        //        var token = tokenHandler.CreateToken(tokenDescriptor);
-        //        return tokenHandler.WriteToken(token);
-
-        //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-        //        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        //        // Set expiration to 24 hours
-        //        var expirationTime = TimeSpan.FromHours(24);
-
-        //        var token = new JwtSecurityToken(
-        //            issuer: jwtIssuer,
-        //            audience: jwtAudience,
-        //            claims: claims,
-        //            expires: DateTime.UtcNow.Add(expirationTime),
-        //            signingCredentials: creds);
-
-        //        return new JwtSecurityTokenHandler().WriteToken(token);
-        //    }
-
-
         private RefreshToken GenerateRefreshToken()
         {
             var refreshToken = new RefreshToken

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net;
@@ -68,7 +69,8 @@ namespace HRbackend.Controllers
                         Position = contract.Position.Name,
                         DOB = employee.DOB,
                         Address = employee.Address,
-                        HireDate = contract.HireDate
+                        HireDate = contract.HireDate,
+                        EmployeeNumber = contract.EmployeeNumber
                     };
 
                     result.Add(employeeInfo);
@@ -92,7 +94,7 @@ namespace HRbackend.Controllers
                 .Where(x => x.EmployeeId == employee.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync();
 
-          
+
             if (employee == null || contract == null)
             {
                 return NotFound("Employee not found");
@@ -113,8 +115,8 @@ namespace HRbackend.Controllers
                 HireDate = contract.HireDate,
                 Lga = employee.Lga.Name,
                 State = employee.State.Name,
-              
-                ManagerId = contract.Manager != null ?  contract.ManagerId : null,
+
+                ManagerId = contract.Manager != null ? contract.ManagerId : null,
                 ManagerName = contract.Manager != null ? contract.Manager.FirstName + " " + contract.Manager.LastName : null,
                 PassportBytes = employee.PassportBytes,
                 ResumeBytes = employee.ResumeBytes,
@@ -203,37 +205,6 @@ namespace HRbackend.Controllers
                 resumeBytes = memoryStream.ToArray();
             }
 
-            // Generate random password for the employee
-            string password = $"{employeeDto.FirstName.ToUpper()}pass@123";
-
-            // Create ApplicationUser (assuming Identity is being used)
-            var applicationUser = new ApplicationUser
-            {
-                UserName = employeeDto.Email,
-                FirstName = employeeDto.FirstName,
-                LastName = employeeDto.LastName,
-                Email = employeeDto.Email,
-                PhoneNumber = employeeDto.PhoneNumber,
-                Role = ApplicationRoles.Employee,
-                PasswordHash = _userManager.PasswordHasher.HashPassword(null, password) // Hash password
-            };
-
-            var result = await _userManager.CreateAsync(applicationUser, password);
-
-
-            if (!result.Succeeded)
-            {
-
-                if (result.Errors?.FirstOrDefault().Code == "DuplicateUserName")
-                {
-                    return BadRequest(new { message = $"Employee with {employeeDto.Email} already exist." });
-                }
-                return BadRequest(new { message = "Failed to create user." });
-            }
-
-            // Assign role to user
-            await _userManager.AddToRoleAsync(applicationUser, ApplicationRoles.Employee.ToString());
-
 
             var state = await _dbContext.States.Where(x => x.StateCode == employeeDto.StateCode).FirstOrDefaultAsync();
             var lga = await _dbContext.LGAs.Where(x => x.Id == employeeDto.LGAId).FirstOrDefaultAsync();
@@ -271,11 +242,52 @@ namespace HRbackend.Controllers
                 PositionId = employeeDto.PositionId,
                 HireDate = employeeDto.HireDate,
                 ManagerId = employeeDto.ManagerId != null ? employeeDto.ManagerId : null,
+                Status = EmployeeStatus.Active,
             };
 
             // Add employee contract to the database
             await _dbContext.EmployeeContracts.AddAsync(employeeContract);
+          
 
+            await _dbContext.SaveChangesAsync();
+
+
+            //Create Identity objects
+            // Generate random password for the employee
+            string password = $"{employeeDto.FirstName.ToUpper()}pass@123";
+
+            // Create ApplicationUser (assuming Identity is being used)
+            var applicationUser = new ApplicationUser
+            {
+                UserName = employeeDto.Email,
+                FirstName = employeeDto.FirstName,
+                LastName = employeeDto.LastName,
+                Email = employeeDto.Email,
+                PhoneNumber = employeeDto.PhoneNumber,
+                Role = ApplicationRoles.Employee,
+                PasswordHash = _userManager.PasswordHasher.HashPassword(null, password) // Hash password
+            };
+
+            var result = await _userManager.CreateAsync(applicationUser, password);
+
+
+            if (!result.Succeeded)
+            {
+
+                if (result.Errors?.FirstOrDefault().Code == "DuplicateUserName")
+                {
+                    return BadRequest(new { message = $"Employee with {employeeDto.Email} already exist." });
+                }
+                return BadRequest(new { message = "Failed to create user." });
+            }
+
+
+            // Assign role to user
+            await _userManager.AddToRoleAsync(applicationUser, ApplicationRoles.Employee.ToString());
+
+            //Fetch the saved employee and save the userId
+            var savedEmployee = await _dbContext.Employees.Where(x => x.Id == employee.Id).FirstOrDefaultAsync();
+            savedEmployee.UserId = Guid.Parse(applicationUser.Id);
             await _dbContext.SaveChangesAsync();
 
             // Send welcome email
@@ -458,5 +470,23 @@ namespace HRbackend.Controllers
 
             await smtpClient.SendMailAsync(mailMessage);
         }
+
+
+        private static readonly Random random = new Random();
+
+        private static string GenerateUniqueIdentifier(Guid guid)
+        {
+            //// Generate a new GUID
+            //Guid guid = Guid.NewGuid();
+
+            // Convert GUID to string and take a subset for uniqueness
+            string uniquePart = guid.ToString("N").Substring(0, 6).ToUpper();
+
+            // Combine with the prefix
+            string uniqueIdentifier = $"EMP-{uniquePart}";
+
+            return uniqueIdentifier;
+        }
+
     }
 }
