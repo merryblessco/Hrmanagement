@@ -88,8 +88,9 @@ namespace HRbackend.Controllers
             return Ok(result);
         }
 
+        
         [HttpGet("employee-info")]
-        public async Task<IActionResult> GetEmployeeInfo()
+         public async Task<IActionResult> GetEmployeeInfo()
         {
             var user = await GetCurrentUserAsync();
 

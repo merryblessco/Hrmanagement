@@ -20,20 +20,20 @@ namespace HRbackend.Controllers
             _contextAccessor = contextAccessor;
         }
 
-        private Guid GetCurrentUserId()
+        protected async Task<Guid> GetCurrentUserId()
         {
             // Retrieve the user ID from the claims using "sub" (subject) claim
-            var userId = _contextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _contextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Ensure userId is not null or empty before parsing
-            if (string.IsNullOrEmpty(userId))
-            {
-                throw new InvalidOperationException("User ID not found in claims.");
-            }
+             // Ensure userId is not null or empty before parsing
+             if (string.IsNullOrEmpty(userId))
+             {
+                 throw new InvalidOperationException("User ID not found in claims.");
+             }
 
-            // Parse the userId to a Guid and return
-            return Guid.Parse(userId);
-        }
+             // Parse the userId to a Guid and return
+             return Guid.Parse(userId);
+         }
 
         protected async Task<ApplicationUser> GetCurrentUserAsync()
         {
