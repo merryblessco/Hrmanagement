@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using HRbackend.Data;
+using HRbackend.Lib;
 using HRbackend.Models;
 using HRbackend.Models.Auth;
 using HRbackend.Models.EmployeeModels;
@@ -10,6 +11,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using RestSharp;
 using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -24,22 +27,27 @@ namespace HRbackend.Controllers
     [ApiController]
     public class EmployeesController : BaseController
     {
+        private readonly IConfiguration _configuration;
+        private readonly Notifications _notifications;
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        private readonly string _smtpHost = "smtp.gmail.com";
-        private readonly int _smtpPort = 587;
-        private readonly string _senderEmail = "hrsolutionsdev@gmail.com";
-        private readonly string _senderPassword = "P@$$4w0rld"; // Store this in a secure location, such as environment variables.
-
-        public EmployeesController(ApplicationDbContext dbContext, IWebHostEnvironment environment, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor) : base(userManager, contextAccessor)
+        public EmployeesController(
+            ApplicationDbContext dbContext,
+            IWebHostEnvironment environment,
+            UserManager<ApplicationUser> userManager,
+            IHttpContextAccessor contextAccessor,
+            IConfiguration configuration,
+            Notifications notifications) : base(userManager, contextAccessor)
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _userManager = userManager;
             _contextAccessor = contextAccessor;
+            _configuration = configuration;
+            _notifications = notifications;
         }
 
         [HttpGet]
@@ -115,11 +123,13 @@ namespace HRbackend.Controllers
                 HireDate = contract.HireDate,
                 Lga = employee.Lga.Name,
                 State = employee.State.Name,
-
+                EmployeeNumber = contract.EmployeeNumber,
                 ManagerId = contract.Manager != null ? contract.ManagerId : null,
                 ManagerName = contract.Manager != null ? contract.Manager.FirstName + " " + contract.Manager.LastName : null,
                 PassportBytes = employee.PassportBytes,
                 ResumeBytes = employee.ResumeBytes,
+                Status = contract.Status,
+                StatusName = contract.Status.GetDescription(),
             };
 
             return Ok(employeeInfo);
@@ -189,23 +199,23 @@ namespace HRbackend.Controllers
                 return BadRequest("Only PDF, JPEG, and Word files are allowed for Passport and Resume.");
             }
 
-            // Convert Passport file to byte array
+            // Convert Passport and Resume files to byte arrays
             byte[] passportBytes;
-            using (var memoryStream = new MemoryStream())
-            {
-                await employeeDto.Passport.CopyToAsync(memoryStream);
-                passportBytes = memoryStream.ToArray();
-            }
-
-            // Convert Resume file to byte array
             byte[] resumeBytes;
-            using (var memoryStream = new MemoryStream())
+
+            using (var passportStream = new MemoryStream())
             {
-                await employeeDto.Resume.CopyToAsync(memoryStream);
-                resumeBytes = memoryStream.ToArray();
+                await employeeDto.Passport.CopyToAsync(passportStream);
+                passportBytes = passportStream.ToArray();
             }
 
+            using (var resumeStream = new MemoryStream())
+            {
+                await employeeDto.Resume.CopyToAsync(resumeStream);
+                resumeBytes = resumeStream.ToArray();
+            }
 
+            // Validate state and LGA
             var state = await _dbContext.States.Where(x => x.StateCode == employeeDto.StateCode).FirstOrDefaultAsync();
             var lga = await _dbContext.LGAs.Where(x => x.Id == employeeDto.LGAId).FirstOrDefaultAsync();
 
@@ -230,33 +240,26 @@ namespace HRbackend.Controllers
                 ResumeBytes = resumeBytes,
             };
 
-            // Add employee to the database
             await _dbContext.Employees.AddAsync(employee);
 
             // Create EmployeeContract object
             var employeeContract = new EmployeeContract
             {
                 EmployeeId = employee.Id,
-                JobTitle = employeeDto.JobTitle != null ? employeeDto.JobTitle : String.Empty,
+                JobTitle = employeeDto.JobTitle ?? string.Empty,
                 DepartmentId = employeeDto.DepartmentId,
                 PositionId = employeeDto.PositionId,
                 HireDate = employeeDto.HireDate,
-                ManagerId = employeeDto.ManagerId != null ? employeeDto.ManagerId : null,
+                ManagerId = employeeDto.ManagerId,
                 Status = EmployeeStatus.Active,
             };
 
-            // Add employee contract to the database
             await _dbContext.EmployeeContracts.AddAsync(employeeContract);
-          
 
             await _dbContext.SaveChangesAsync();
 
-
-            //Create Identity objects
-            // Generate random password for the employee
+            // Create ApplicationUser
             string password = $"{employeeDto.FirstName.ToUpper()}pass@123";
-
-            // Create ApplicationUser (assuming Identity is being used)
             var applicationUser = new ApplicationUser
             {
                 UserName = employeeDto.Email,
@@ -265,39 +268,51 @@ namespace HRbackend.Controllers
                 Email = employeeDto.Email,
                 PhoneNumber = employeeDto.PhoneNumber,
                 Role = ApplicationRoles.Employee,
-                PasswordHash = _userManager.PasswordHasher.HashPassword(null, password) // Hash password
+                PasswordHash = _userManager.PasswordHasher.HashPassword(null, password)
             };
 
             var result = await _userManager.CreateAsync(applicationUser, password);
-
-
             if (!result.Succeeded)
             {
-
-                if (result.Errors?.FirstOrDefault().Code == "DuplicateUserName")
+                if (result.Errors?.FirstOrDefault()?.Code == "DuplicateUserName")
                 {
-                    return BadRequest(new { message = $"Employee with {employeeDto.Email} already exist." });
+                    return BadRequest(new { message = $"Employee with {employeeDto.Email} already exists." });
                 }
                 return BadRequest(new { message = "Failed to create user." });
             }
 
-
-            // Assign role to user
             await _userManager.AddToRoleAsync(applicationUser, ApplicationRoles.Employee.ToString());
 
-            //Fetch the saved employee and save the userId
             var savedEmployee = await _dbContext.Employees.Where(x => x.Id == employee.Id).FirstOrDefaultAsync();
             savedEmployee.UserId = Guid.Parse(applicationUser.Id);
+
             await _dbContext.SaveChangesAsync();
 
-            // Send welcome email
+            // Access the email template
+            string emailTemplate = EmailTemplates.WelcomeEmail;
+
+            // Replace placeholders with actual values
+            string emailContent = emailTemplate
+                .Replace("{FullName}", $"{employeeDto.FirstName + " " + employeeDto.LastName}")
+                .Replace("[CompanyName]", _configuration["CompanySettings:CompanyName"])
+                .Replace("{Passcode}", password);
+
+            await _notifications.SendSmsNotificationAsync(new string[]
+            {
+                employee.PhoneNumber
+            }, emailContent);
+
+            // Optionally send a welcome email
             string subject = "Welcome to Tavai-Tech Solutions";
             string message = $"<h1>Welcome, {employee.FirstName} {employee.LastName}!</h1><p>Your account has been created successfully. Your login credentials are:</p>" +
-                             $"<p>Email: {employee.Email}</p><p>Password: {password}</p><p>Please change your password after the first login.</p>";
+                            $"<p>Email: {employee.Email}</p><p>Password: {password}</p><p>Please change your password after the first login.</p>";
+
             //await SendEmailAsync(employee.Email, subject, message);
 
             return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, employee);
         }
+
+
 
         private async Task<string> SaveFile(IFormFile file, string subFolder)
         {
