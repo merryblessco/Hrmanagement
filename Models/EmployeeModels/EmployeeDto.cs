@@ -42,6 +42,10 @@ namespace HRbackend.Models.EmployeeModels
         public Guid? ManagerId { get; set; }
         [Obsolete]
         public string? ManagerName { get; set; }
+        public string? StatusName { get; set; }
+        public EmployeeStatus? Status { get; set; }
+
+
         //[Obsolete]
         //public string? Role { get; set; }
 

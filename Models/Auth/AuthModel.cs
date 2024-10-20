@@ -44,4 +44,11 @@ namespace HRbackend.Models.Auth
         public string RefreshToken { get; set; }
     }
 
+    public class ChangePasswordDto
+    {
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
+
+
 }

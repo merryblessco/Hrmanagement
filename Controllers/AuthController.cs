@@ -1,9 +1,11 @@
-﻿using HRbackend.Models.Auth;
+﻿using HRbackend.Data;
+using HRbackend.Models.Auth;
 using HRbackend.Models.Enums;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -19,12 +21,15 @@ namespace HRbackend.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _dbContext;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
+
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, ApplicationDbContext dbContext)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _dbContext = dbContext;
         }
 
         //[Authorize(Roles = "Administrator, HrManager")]
@@ -78,6 +83,31 @@ namespace HRbackend.Controllers
             user.RefreshTokenExpiryTime = refreshToken.Expires;
             await _userManager.UpdateAsync(user);
 
+            EmployeeContract contract = new EmployeeContract();
+
+            var role = await _userManager.GetRolesAsync(user);
+
+            if (role.Contains(ApplicationRoles.Employee.GetDescription()))
+            {
+                var employee = await _dbContext.Employees.Where(x => x.UserId == Guid.Parse(user.Id)).FirstOrDefaultAsync();
+
+                if (employee == null)
+                {
+                    return Unauthorized("Invalid credentials");
+                }
+
+                var employeeContract = await _dbContext.EmployeeContracts.Where(x => x.EmployeeId == employee.Id).FirstOrDefaultAsync();
+
+                if (employeeContract == null)
+                {
+                    return Unauthorized("Invalid credentials");
+                }
+
+                contract = employeeContract;
+
+            }
+
+
             // Return user details, access token, and refresh token
             return Ok(new
             {
@@ -91,8 +121,46 @@ namespace HRbackend.Controllers
                     LastName = user.LastName,
                     Role = user.Role.GetDescription(),
                     InitialSetup = user.InitialSetup,
+                    PasswordChangedStatus = user.PasswordChangedStatus,
+                    IsOnboardingComplete = contract?.IsOnboardingComplete
                 }
             });
+        }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            //// Ensure new password and confirm password match
+            //if (model.NewPassword != model.ConfirmNewPassword)
+            //{
+            //    return BadRequest(new { message = "New passwords do not match." });
+            //}
+
+            // Get the currently authenticated user
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found." });
+            }
+
+            // Try to change the password
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            user.PasswordChangedStatus = true;
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Password changed successfully." });
         }
 
         [HttpPost("reset-password")]

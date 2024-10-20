@@ -15,6 +15,7 @@ namespace HRbackend.Models.Auth
         public ApplicationRoles Role { get; set; }
 
         public bool InitialSetup { get; set; } = false;
+        public bool PasswordChangedStatus { get; set; } = false;
 
         public string RefreshToken { get; set; } = string.Empty;
 

@@ -20,6 +20,8 @@ public class EmployeeContract : BaseEntity
     public Department Department { get; set; }
     public Position Position { get; set; }
     public Employee Employee { get; set; }
+    public bool IsOnboardingComplete{ get; set; } = false;
+
 
     public EmployeeContract()
     {

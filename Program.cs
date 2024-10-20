@@ -1,5 +1,6 @@
 using AutoMapper;
 using HRbackend.Data;
+using HRbackend.Lib;
 using HRbackend.Models.Auth;
 using HRbackend.Models.Helper;
 using HRbackend.Seeders;
@@ -52,6 +53,12 @@ builder.Services.AddSwaggerGen(c =>
     //// Add this to prepend "Bearer " automatically
     //c.OperationFilter<SwaggerTokenFilter>();
 });
+
+// Register HttpClientService
+builder.Services.AddHttpClient<HttpClientService>();
+
+// Register Notifications
+builder.Services.AddSingleton<Notifications>();
 
 // Database configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

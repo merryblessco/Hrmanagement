@@ -1,22 +1,28 @@
 ﻿using AutoMapper;
 using HRbackend.Data;
-using HRbackend.Models.EmployeeModels;
+using HRbackend.Models.Auth;
 using HRbackend.Models.Entities.Recruitment;
 using HRbackend.Models.Enums;
 using HRbackend.Models.RecruitmentModel;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 namespace HRbackend.Controllers
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/[controller]")]
     [ApiController]
-    public class RecruitmentController : ControllerBase
+    public class RecruitmentController : BaseController
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
-        public RecruitmentController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper)
+        private readonly string _filePath = "";  // Set your file path here
+        private readonly IHttpContextAccessor _contextAccessor;
+        public RecruitmentController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IMapper mapper, UserManager<ApplicationUser> userManager, IHttpContextAccessor contextAccessor) : base(userManager, contextAccessor)
+
         {
             _environment = environment ?? throw new ArgumentNullException(nameof(environment));
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
@@ -59,10 +65,11 @@ namespace HRbackend.Controllers
 
 
         //}
+        [AllowAnonymous]
         [HttpGet("getallJobs")]
         public async Task<ActionResult<IEnumerable<JobPostingResponseDto>>> GetAll()
         {
-                var jobPostings = new List<JobPostingResponseDto>();
+            var jobPostings = new List<JobPostingResponseDto>();
 
             var records = _dbContext.JobPostings.Include(x => x.Department).Where(x => !x.IsDeleted).Select(x => new JobPostingResponseDto
             {
@@ -112,7 +119,7 @@ namespace HRbackend.Controllers
                 Responsibilities = record.Responsibilities,
                 Qualifications = record.Qualifications,
             };
-          
+
             return Ok(response);
         }
 
@@ -179,14 +186,14 @@ namespace HRbackend.Controllers
             return Ok(new { posting.Id });
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteJob(int id)
+        public async Task<IActionResult> DeleteJob(Guid id)
         {
             var job = await _dbContext.JobPostings.FindAsync(id);
             if (job == null) return NotFound();
 
-            _dbContext.JobPostings.Remove(job);
+            job.IsDeleted = true;
             await _dbContext.SaveChangesAsync();
-            return Ok("Job Successfuly Removed!");
+            return Ok(new { message = "Job Successfuly Removed!" });
         }
 
         private bool JobExists(Guid id)
