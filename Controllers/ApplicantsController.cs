@@ -300,7 +300,7 @@ namespace HRbackend.Controllers
 
             // Send welcome email
             string subject = "Interview Schedule";
-            string message = $"<h1>Dear, {applicant.FirstName + " " + applicant.LastName}!</h1><p> Based on your portfolio, We're excited invite for an interview.</p>";
+            string message = $"<h1>Dear, {applicant.FirstName + " " + applicant.LastName}!</h1><p> Based on your portfolio, We're excited to invite for an interview.</p>";
             //await SendEmailAsync(interview.ApplicantEmail, subject, message);
 
             return Ok(new { message = "Invitation Sent." });
