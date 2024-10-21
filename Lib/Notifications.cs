@@ -36,7 +36,7 @@ namespace HRbackend.Lib
 
                 var response = await _httpClientService.PostAsync(SendSmsUrI, requestBody, authorizationToken);
 
-                if (response.IsSuccessStatusCode)
+                    if (response.IsSuccessStatusCode)
                 {
                     var responseData = await response.Content.ReadAsStringAsync();
                 }

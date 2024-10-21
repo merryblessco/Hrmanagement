@@ -40,23 +40,25 @@ namespace HRbackend.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("DepartmentId")
+                    b.Property<DateTime?>("DateJoined")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EmployeeNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("HireDate")
+                    b.Property<DateTime?>("HireDate")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsOnboardingComplete")
+                    b.Property<bool?>("IsOnboardingComplete")
                         .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
@@ -71,10 +73,10 @@ namespace HRbackend.Migrations
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("PositionId")
+                    b.Property<Guid?>("PositionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Status")
+                    b.Property<int?>("Status")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -274,7 +276,9 @@ namespace HRbackend.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
-                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AlternativePhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("CreatedBy")
@@ -289,7 +293,10 @@ namespace HRbackend.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DOB")
+                    b.Property<int?>("CreationMode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DOB")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -303,7 +310,7 @@ namespace HRbackend.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("LGAId")
+                    b.Property<Guid?>("LGAId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("LastName")
@@ -317,21 +324,24 @@ namespace HRbackend.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<byte[]>("PassportBytes")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("ResumeBytes")
-                        .IsRequired()
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<int>("Role")
+                    b.Property<int?>("Role")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("StateId")
+                    b.Property<string>("SpouseInfo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SpousePhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("StateId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("UserId")
@@ -1620,9 +1630,7 @@ namespace HRbackend.Migrations
                 {
                     b.HasOne("HRbackend.Models.Entities.Setups.Department", "Department")
                         .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DepartmentId");
 
                     b.HasOne("HRbackend.Models.Entities.Employees.Employee", "Employee")
                         .WithMany()
@@ -1636,9 +1644,7 @@ namespace HRbackend.Migrations
 
                     b.HasOne("HRbackend.Models.Entities.Setups.Position", "Position")
                         .WithMany()
-                        .HasForeignKey("PositionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PositionId");
 
                     b.Navigation("Department");
 
@@ -1653,15 +1659,11 @@ namespace HRbackend.Migrations
                 {
                     b.HasOne("HRbackend.Models.Entities.Setups.LGA", "Lga")
                         .WithMany()
-                        .HasForeignKey("LGAId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("LGAId");
 
                     b.HasOne("HRbackend.Models.Entities.Setups.State", "State")
                         .WithMany()
-                        .HasForeignKey("StateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("StateId");
 
                     b.Navigation("Lga");
 

@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+using ClosedXML.Excel;
 using HRbackend.Data;
 using HRbackend.Lib;
 using HRbackend.Models;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using OfficeOpenXml;
 using RestSharp;
 using System;
 using System.Diagnostics.Contracts;
@@ -73,11 +75,11 @@ namespace HRbackend.Controllers
                         Email = employee.Email,
                         PhoneNumber = employee.PhoneNumber,
                         JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.JobTitle : contract.Position.Name,
-                        Department = contract.Department.Name,
-                        Position = contract.Position.Name,
-                        DOB = employee.DOB,
+                        Department = contract.Department == null ? null : contract.Department.Name,
+                        Position = contract.Position == null ? null : contract.Position.Name,
+                        DOB = (DateTime)employee.DOB,
                         Address = employee.Address,
-                        HireDate = contract.HireDate,
+                        HireDate = contract.HireDate == null ? null : (DateTime)contract.HireDate,
                         EmployeeNumber = contract.EmployeeNumber
                     };
 
@@ -88,9 +90,9 @@ namespace HRbackend.Controllers
             return Ok(result);
         }
 
-        
+
         [HttpGet("employee-info")]
-         public async Task<IActionResult> GetEmployeeInfo()
+        public async Task<IActionResult> GetEmployeeInfo()
         {
             var user = await GetCurrentUserAsync();
 
@@ -119,9 +121,9 @@ namespace HRbackend.Controllers
                 JobTitle = String.IsNullOrEmpty(contract.JobTitle) ? contract.Position.Name : contract.JobTitle,
                 Department = contract.Department.Name,
                 Position = contract.Position.Name,
-                DOB = employee.DOB,
+                DOB = (DateTime)employee.DOB,
                 Address = employee.Address,
-                HireDate = contract.HireDate,
+                HireDate = (DateTime)contract.HireDate,
                 Lga = employee.Lga.Name,
                 State = employee.State.Name,
                 EmployeeNumber = contract.EmployeeNumber,
@@ -163,18 +165,18 @@ namespace HRbackend.Controllers
                 Address = employee.Address,
                 State = state.Name,
                 Lga = lga.Name,
-                DOB = employee.DOB,
+                DOB = (DateTime)employee.DOB,
                 PassportBytes = employee.PassportBytes,
                 ResumeBytes = employee.ResumeBytes,
 
                 // Contract Information
                 JobTitle = contract.JobTitle,
-                DepartmentId = contract.DepartmentId,
+                DepartmentId = (Guid)contract.DepartmentId,
                 Department = contract.Department.Name,
-                PositionId = contract.PositionId,
+                PositionId = (Guid)contract.PositionId,
                 Position = contract.Position.Name,
 
-                HireDate = contract.HireDate,
+                HireDate = (DateTime)contract.HireDate,
 
                 // Manager Information
                 ManagerId = contract.Manager != null ? contract.Manager.Id : new Guid(),
@@ -239,6 +241,7 @@ namespace HRbackend.Controllers
                 DOB = employeeDto.DOB,
                 PassportBytes = passportBytes,
                 ResumeBytes = resumeBytes,
+                CreationMode = EmployeeCreationMode.Single
             };
 
             await _dbContext.Employees.AddAsync(employee);
@@ -313,6 +316,174 @@ namespace HRbackend.Controllers
             return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, employee);
         }
 
+        [HttpPost("bulk-upload")]
+        public async Task<IActionResult> UploadEmployees(IFormFile excelFile)
+        {
+            if (excelFile == null || excelFile.Length == 0)
+                return BadRequest("An Excel file is required.");
+
+            var allowedExtensions = new[] { ".xls", ".xlsx" };
+            var fileExtension = Path.GetExtension(excelFile.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(fileExtension))
+                return BadRequest("Only Excel files (.xls, .xlsx) are allowed.");
+
+            var employeeList = new List<EmployeeExcelDto>();
+
+            using (var stream = new MemoryStream())
+            {
+                await excelFile.CopyToAsync(stream);
+                using (var package = new ExcelPackage(stream))
+                {
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // Set license context
+
+                    var worksheet = package.Workbook.Worksheets[0]; // Access the first worksheet
+                    var rowCount = worksheet.Dimension.Rows;
+
+                    // Start reading from row 2, assuming row 1 is the header
+                    for (int row = 2; row <= rowCount; row++)
+                    {
+                        var employee = new EmployeeExcelDto
+                        {
+                            LastName = worksheet.Cells[row, 1].Text,
+                            FirstName = worksheet.Cells[row, 2].Text,
+                            PhoneNumber = worksheet.Cells[row, 3].Text,
+                            AlternativePhoneNumber = worksheet.Cells[row, 4].Text,
+                            Address = worksheet.Cells[row, 5].Text,
+                            Email = worksheet.Cells[row, 6].Text,
+                            SpouseInfo = worksheet.Cells[row, 8].Text,
+                            SpousePhoneNumber = worksheet.Cells[row, 9].Text,
+                            //  DateJoined = String.IsNullOrEmpty((worksheet.Cells[row, 10].Text).Trim()) ? String.Empty : HelperMethods.formatExcelDate(worksheet.Cells[row, 10].Text)
+                        };
+
+                        employeeList.Add(employee);
+                    }
+                }
+            }
+
+            if (employeeList.Count == 0)
+                return BadRequest("The Excel file contains no employee data.");
+
+            foreach (var employeeDto in employeeList)
+            {
+                if (String.IsNullOrEmpty(employeeDto.Email) || String.IsNullOrEmpty(employeeDto.PhoneNumber))
+                {
+                    continue;
+                    //return BadRequest( new { message = "The Excel file contains no employee data." });
+                }
+                // Check if the employee already exists by email
+                var existingEmployee = await _dbContext.Employees
+                    .Where(e => e.Email == employeeDto.Email)
+                    .FirstOrDefaultAsync();
+
+                if (existingEmployee != null)
+                    continue; // Skip this employee if they already exist
+
+                employeeDto.FirstName.Trim();
+                employeeDto.LastName.Trim();
+                employeeDto.Email.Trim();
+                employeeDto.PhoneNumber.Trim();
+                employeeDto.Address.Trim();
+                employeeDto.SpouseInfo.Trim();
+                employeeDto.LastName.Trim();
+
+                // Create and save new employee
+                var employee = new Employee
+                {
+                    FirstName = employeeDto.FirstName,
+                    LastName = employeeDto.LastName,
+                    Email = employeeDto.Email,
+                    PhoneNumber = employeeDto.PhoneNumber,
+                    Address = employeeDto.Address,
+                    DOB = employeeDto.DOB,
+                    SpouseInfo = employeeDto.SpouseInfo,
+                    SpousePhoneNumber = employeeDto.SpousePhoneNumber,
+                    CreationMode = EmployeeCreationMode.Bulk
+                    // ... (set other fields as necessary)
+                };
+
+                await _dbContext.Employees.AddAsync(employee);
+
+                // Create EmployeeContract object
+                var employeeContract = new EmployeeContract
+                {
+                    EmployeeId = employee.Id,
+                    //DateJoined = DateTime.Parse(employeeDto.DateJoined),
+                    IsOnboardingComplete = true,
+                    Status = EmployeeStatus.Active,
+                };
+
+                await _dbContext.EmployeeContracts.AddAsync(employeeContract);
+
+                // Create ApplicationUser
+                string password = $"{employeeDto.FirstName.Trim().ToUpper()}pass@123";
+                var applicationUser = new ApplicationUser
+                {
+                    UserName = employeeDto.Email.Trim(),
+                    FirstName = employeeDto.FirstName,
+                    LastName = employeeDto.LastName,
+                    Email = employeeDto.Email.Trim(),
+                    PhoneNumber = employeeDto.PhoneNumber,
+                    Role = ApplicationRoles.Employee,
+                    PasswordHash = _userManager.PasswordHasher.HashPassword(null, password)
+                };
+
+                var result = await _userManager.CreateAsync(applicationUser, password);
+                if (!result.Succeeded)
+                {
+                    if (result.Errors?.FirstOrDefault()?.Code == "DuplicateUserName")
+                    {
+                        return BadRequest(new { message = $"Employee with {employeeDto.Email} already exists." });
+                    }
+                    return BadRequest(new { message = $"Failed to create user.{employeeDto.FirstName}" });
+                }
+
+                await _userManager.AddToRoleAsync(applicationUser, ApplicationRoles.Employee.ToString());
+
+                var savedEmployee = await _dbContext.Employees.Where(x => x.Id == employee.Id).FirstOrDefaultAsync();
+                savedEmployee.UserId = Guid.Parse(applicationUser.Id);
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Employees uploaded successfully." });
+        }
+
+
+        [HttpGet("download-template")]
+        public IActionResult DownloadEmployeeTemplate()
+        {
+            // Create a new workbook and worksheet
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Employee Template");
+
+                // Define the column headers
+                worksheet.Cell(1, 1).Value = "LASTNAME";
+                worksheet.Cell(1, 2).Value = "FIRSTNAME";
+                worksheet.Cell(1, 3).Value = "PHONENUMBER";
+                worksheet.Cell(1, 4).Value = "ALTERNATIVEPHONENUMBER";
+                worksheet.Cell(1, 5).Value = "ADDRESS";
+                worksheet.Cell(1, 6).Value = "EMAIL";
+                worksheet.Cell(1, 7).Value = "DOB";
+                worksheet.Cell(1, 8).Value = "SPOUSEINFO";
+                worksheet.Cell(1, 9).Value = "SPOUSEPHONENUMBER";
+                worksheet.Cell(1, 10).Value = "DATEJOINED";
+
+                // Adjust column widths for better readability
+                worksheet.Columns().AdjustToContents();
+
+                // Prepare the Excel file for download
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+
+                    // Return the Excel file as a downloadable content
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "EmployeeTemplate.xlsx");
+                }
+            }
+        }
 
 
         private async Task<string> SaveFile(IFormFile file, string subFolder)

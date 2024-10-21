@@ -11,6 +11,7 @@ namespace HRbackend.Models.EmployeeModels
         public string LastName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
+        public string? AlternatePhoneNumber { get; set; }
         [Obsolete]
         public string? EmployeeNumber { get; set; }
 
@@ -38,7 +39,7 @@ namespace HRbackend.Models.EmployeeModels
         [Obsolete]
         public string? Position { get; set; }
 
-        public DateTime HireDate { get; set; }
+        public DateTime? HireDate { get; set; }
         public Guid? ManagerId { get; set; }
         [Obsolete]
         public string? ManagerName { get; set; }
@@ -50,4 +51,19 @@ namespace HRbackend.Models.EmployeeModels
         //public string? Role { get; set; }
 
     }
+
+    public class EmployeeExcelDto
+    {
+        public string LastName { get; set; }
+        public string FirstName { get; set; }
+        public string PhoneNumber { get; set; }
+        public string AlternativePhoneNumber { get; set; }
+        public string Address { get; set; }
+        public string Email { get; set; }
+        public DateTime DOB { get; set; }
+        public string SpouseInfo { get; set; }
+        public string SpousePhoneNumber { get; set; }
+        public string DateJoined { get; set; }
+    }
+
 }
