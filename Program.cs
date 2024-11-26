@@ -98,8 +98,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-             .AllowAnyHeader()
+        //policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://102.208.115.194")
+            .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
@@ -128,11 +129,17 @@ if (app.Environment.IsDevelopment())
     app.UseAuthorization();
 }
 
+
+
+
 app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseRouting();  // Add this if missing
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 
 app.Run();

@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OfficeOpenXml;
-using RestSharp;
 using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
